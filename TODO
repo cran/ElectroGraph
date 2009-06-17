@@ -1,0 +1,9 @@
+Current list of improvements to be made:
+
+-in animation connection, give more weight to points at the center. (5-26-09)
+
+-extra crossed ties: un-twist by flipping a set of points around. (5-25-09)
+
+-correct dimensions of output to correspond properly. Currently, tick marks on the axes represent comparative distance. (5-25-09)
+
+-replace sociomatrix holdings with sparse-matrix representation, for easier handling of larger numbers of nodes. (5-25-09)

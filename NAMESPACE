@@ -1,0 +1,20 @@
+useDynLib(ElectroGraph)
+
+export(network.layout,
+			pair.sequence,
+			make.sociomatrix.from.edges,
+			make.sociomatrix.from.lattice,
+			geodesic.mat,
+			network.components,
+			electrograph,
+			get.resistance,
+			compute.volts.asymmetric,
+			compute.volts.symmetric,
+			electrograph.exam,
+			plot.wedding.cake,
+			animate.plot.series)
+
+S3method(plot,electrograph)
+S3method(print,electrograph)
+S3method(summary,electrograph)
+S3method(plot,electrograph.plot)
