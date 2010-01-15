@@ -10,7 +10,7 @@ Given an electrograph object, display a two-dimensional representation.
 					ego.focus = NULL, manual.coords = NULL, redo.coordinates = FALSE,
 					just.coordinates = FALSE, node.colors = NULL,
 					label.colors = NULL, pts.cex = 1.5, label.cex = 1.5,
-					component.border.col = 5, 
+					component.border.col = 8, 
 					edge.thickness = c("standard", "electro.betweenness"), 
 					max.thick = 2,	source.sink.pair = NULL,
 					previous.electrograph.plot.object = NULL, 
@@ -45,7 +45,7 @@ Given an electrograph object, display a two-dimensional representation.
 \value{
 	Returns an object of class ``electrograph.plot'' which can be replotted or used in later analysis.
 }
-\author{Andrew C. Thomas <acthomas@fas.harvard.edu>}
+\author{Andrew C. Thomas <act@acthomas.ca>}
 \examples{
 
 sources <- c(1,2,3,4)

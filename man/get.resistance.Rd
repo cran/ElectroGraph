@@ -25,7 +25,7 @@ get.resistance (e.graph, sources, sinks)
 	\item{current.out}{The total current flowing into and out of each node given a source/sink pair.}
 	\item{reference.mean}{As a check, computed mean of the sociomatrix.}
 }
-\author{Andrew C. Thomas <acthomas@fas.harvard.edu>}
+\author{Andrew C. Thomas <act@acthomas.ca>}
 \note{
 	The ``compute'' functions are subsumed within get.resistance() and are given for diagnostic purposes. In general, the full execution of ``get.resistance'' is more reliable and faster; this is called in general form by ``electrograph.exam''.
 }

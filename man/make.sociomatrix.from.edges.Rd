@@ -20,7 +20,7 @@ make.sociomatrix.from.edges(inputmat, symmetric=FALSE)
 \value{
   A sociomatrix, where the number of rows and columns is equal to the count of unique nodes specified; row and column names are equal to the node names given.
 }
-\author{Andrew C. Thomas <acthomas@fas.harvard.edu>}
+\author{Andrew C. Thomas <act@acthomas.ca>}
 
 \examples{
 src <- 1:10

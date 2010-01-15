@@ -67,7 +67,7 @@ compute.volts.symmetric <- function(sociomatrix,src,snk) {
   if (src==snk) stop ("In compute.volts, source and sink can't be identical.")
 
   voltages <- currents <- rep(0,n.pts)
-  resist.eq <- 0; fidelity <- 1
+  resist.eq <- 1234567891; fidelity <- 1
 
   if (n.pts>2) {
     res <- .C("solve_volts_symmetric_c",
@@ -91,7 +91,7 @@ compute.volts.asymmetric <- function(sociomatrix,src,snk) {
   if (src==snk) stop ("In compute.volts, source and sink can't be identical.")
 
   voltages <- currents <- rep(0,n.pts)
-  resist.eq <- 0; fidelity <- 1
+  resist.eq <- 1234567890; fidelity <- 1
   
   if (n.pts>2) {
     res <- .C("solve_volts_notsymmetric_c",
@@ -262,6 +262,8 @@ get.resistance <- function(e.graph, sources, sinks) {
     src <- match(sources.true,rownames(e.graph$sociomatrices[[kk]]))
     snk <- match(sinks.true,rownames(e.graph$sociomatrices[[kk]]))
 
+    this.one.symmetric <- all(e.graph$sociomatrices[[kk]] == t(e.graph$sociomatrices[[kk]]))
+
     if (length(node.subset)==2) {
       #src snk must be (1,2), (2,1) or both.
       result <- solve.twosome(e.graph$sociomatrices[[kk]],src,snk)
@@ -278,38 +280,70 @@ get.resistance <- function(e.graph, sources, sinks) {
 
     } else {
     
-      out.conducts.piece <- out.resists.piece <-
-        out.fidelity.piece <- rep(-3,length(src))
       #out.avg.current.piece <- out.red.current.piece <- rep(-7,n.pts.piece^2)
 
       #result <- get.resistance.really.fast (e.graph$sociomatrices[[kk]], src, snk)
 
-      result <- .C("get_resistances_fast_symmetric_c",
-                   as.double(e.graph$sociomatrices[[kk]]), as.integer(n.pts.piece),
-                   as.integer(src-1), as.integer(snk-1), as.integer(length(src)),
-
-                   resist=as.double(out.resists.piece),
-                   fidelity=as.double(out.fidelity.piece),
-                   
-                   blk.curr.a=as.double(rep(-7,n.pts.piece^2)),
-                   red.curr.a=as.double(rep(-7,n.pts.piece^2)),
-                   blk.curr.v=as.double(rep(-7,n.pts.piece^2)),
-                   red.curr.v=as.double(rep(-7,n.pts.piece^2)),
-                   blk.curr.p=as.double(rep(-7,n.pts.piece^2)),
-                   red.curr.p=as.double(rep(-7,n.pts.piece^2)),
-                   
-
-                   ll.1=as.double(rep(-9,(n.pts.piece-1)^2)),
-                   ll.2=as.double(rep(-9,(n.pts.piece-1)^2)),
-                   ll.3=as.double(rep(-9,(n.pts.piece-1)^2))               
-                   )
-
+      #don't bother doing disconnected.
+      disco <- sapply(1:length(src), FUN=function(kk) {
+        kk*is.finite(e.graph$geodesic[node.subset,node.subset][src[kk],snk[kk]])
+      })
+      disco <- disco[disco>0]
+      newsnk <- snk[disco]; newsrc <- src[disco]
+      #print(rbind(newsrc,newsnk))
       
-      writeLines("out")
+      out.conducts.piece <- out.resists.piece <-
+        out.fidelity.piece <- rep(-3,length(newsrc))
+
+      if (this.one.symmetric) {
+        result <- .C("get_resistances_fast_symmetric_c",
+                     as.double(e.graph$sociomatrices[[kk]]), as.integer(n.pts.piece),
+                     as.integer(newsrc-1), as.integer(newsnk-1),
+                     as.integer(length(newsrc)),
+                     
+                     resist=as.double(out.resists.piece),
+                     fidelity=as.double(out.fidelity.piece),
+                   
+                     blk.curr.a=as.double(rep(-7,n.pts.piece^2)),
+                     red.curr.a=as.double(rep(-7,n.pts.piece^2)),
+                     blk.curr.v=as.double(rep(-7,n.pts.piece^2)),
+                     red.curr.v=as.double(rep(-7,n.pts.piece^2)),
+                     blk.curr.p=as.double(rep(-7,n.pts.piece^2)),
+                     red.curr.p=as.double(rep(-7,n.pts.piece^2)),
+                     
+                     ll.1=as.double(rep(-9,(n.pts.piece-1)^2)),
+                     ll.2=as.double(rep(-9,(n.pts.piece-1)^2)),
+                     ll.3=as.double(rep(-9,(n.pts.piece-1)^2))               
+                     )
+      } else {
+        result <- .C("get_resistances_c",
+                     as.double(e.graph$sociomatrices[[kk]]), as.integer(n.pts.piece),
+                     as.integer(newsrc-1), as.integer(newsnk-1),
+                     as.integer(length(newsrc)),
+
+                     resist=as.double(out.resists.piece),
+                     fidelity=as.double(out.fidelity.piece),
+                   
+                     blk.curr.a=as.double(rep(-7,n.pts.piece^2)),
+                     red.curr.a=as.double(rep(-7,n.pts.piece^2)),
+                     blk.curr.v=as.double(rep(-7,n.pts.piece^2)),
+                     red.curr.v=as.double(rep(-7,n.pts.piece^2)),
+                     blk.curr.p=as.double(rep(-7,n.pts.piece^2)),
+                     red.curr.p=as.double(rep(-7,n.pts.piece^2)))
+        result$ll.1 <- result$ll.2 <- result$ll.3 <- 0
+      }
       
-      out.conducts[subset] <- 1/result$resist
-      out.resists[subset] <- result$resist
-      out.fidelity[subset] <- result$fidelity
+      #writeLines("out")
+
+      #print(c(length(result$resist),length(disco)))
+      
+      out.conducts[subset[disco]] <- 1/result$resist                   
+      out.resists[subset[disco]] <- result$resist
+      out.fidelity[subset[disco]] <- result$fidelity
+      out.conducts[subset[-disco]] <- 0                   
+      out.resists[subset[-disco]] <- Inf
+      out.fidelity[subset[-disco]] <- 0
+      
     
       #if (debug.mode) {cat("thru 4",kk,"\n"); print(dim(out.voltages));
       #  print(class(out.voltages));}
@@ -374,9 +408,9 @@ electrograph.exam <- function(e.graph, sample.edges=FALSE, sample.per=NULL) {
 
   #eg.hold <- e.graph
   if (any(e.graph$grand.socio != t(e.graph$grand.socio))) {
-    message("Note: Directed/asymmetric graphs are currently not supported; operations will be conducted on the symmetric version.")
-    e.graph$grand.sociomatrix <- (e.graph$grand.sociomatrix + t(e.graph$grand.sociomatrix))/2
-    for (kk in 1:length(e.graph$sociomat)) e.graph$sociomatrices[[kk]] <- (e.graph$sociomatrices[[kk]] + t(e.graph$sociomatrices[[kk]]))/2
+    message("Note: Directed/asymmetric graphs are solved at considerably slower speed than symmetric graphs.")
+    #e.graph$grand.sociomatrix <- (e.graph$grand.sociomatrix + t(e.graph$grand.sociomatrix))/2
+    #for (kk in 1:length(e.graph$sociomat)) e.graph$sociomatrices[[kk]] <- (e.graph$sociomatrices[[kk]] + t(e.graph$sociomatrices[[kk]]))/2
   }
 
   
@@ -396,8 +430,10 @@ electrograph.exam <- function(e.graph, sample.edges=FALSE, sample.per=NULL) {
   
   sources <- rownames(e.graph$grand.socio)[edges[,1]]
   sinks <- rownames(e.graph$grand.socio)[edges[,2]]
+
   
   out <- get.resistance(e.graph,sources,sinks)
+
   
   distance.mat <- array(-1,rep(n.pts,2))
   diag(distance.mat) <- 0
@@ -436,8 +472,8 @@ electrograph.exam <- function(e.graph, sample.edges=FALSE, sample.per=NULL) {
     e.graph$red.curr.a <- e.graph$red.curr.a+t(e.graph$red.curr.a)
     e.graph$blk.curr.v <- e.graph$blk.curr.v+t(e.graph$blk.curr.v)
     e.graph$red.curr.v <- e.graph$red.curr.v+t(e.graph$red.curr.v)
-    e.graph$blk.curr.p <- e.graph$blk.curr.v+t(e.graph$blk.curr.p)
-    e.graph$red.curr.p <- e.graph$red.curr.v+t(e.graph$red.curr.p)
+    e.graph$blk.curr.p <- e.graph$blk.curr.p+t(e.graph$blk.curr.p)
+    e.graph$red.curr.p <- e.graph$red.curr.p+t(e.graph$red.curr.p)
   }
   
   return(e.graph)

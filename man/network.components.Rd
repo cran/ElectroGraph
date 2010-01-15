@@ -5,11 +5,16 @@
 Given a sociomatrix, determine the membership of connected components.
 }
 \usage{
-network.components (sociomatrix, pseudo.diameter.bridge=2)
+network.components (sociomatrix, pseudo.diameter.bridge=2,
+  minimum.relative.strength.for.tie = 1e-08)
 }
 \arguments{
   \item{sociomatrix}{An n-by-n sociomatrix, where tie strengths indicate inverse distance.}
-  \item{pseudo.diameter.bridge}{When constructing a pseudo-diameter measurement, this represents the additional distance between components.}
+  \item{pseudo.diameter.bridge}{When constructing a pseudo-diameter
+    measurement, this represents the additional distance between
+    components.}
+  \item{minimum.relative.strength.for.tie}{If a tie value is below this,
+  the tie is omitted from the analysis.}
 }
 \value{
   A list containing the following items:	
@@ -20,7 +25,7 @@ network.components (sociomatrix, pseudo.diameter.bridge=2)
   \item{geodesic}{The full geodesic path length matrix of the system.}
 }
 \note{This function is called automatically during the creation of an ElectroGraph object.}
-\author{Andrew C. Thomas <acthomas@fas.harvard.edu>}
+\author{Andrew C. Thomas <act@acthomas.ca>}
 \examples{
 sources <- c(1,2,3,4)
 sinks <- c(2,3,1,5)

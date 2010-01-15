@@ -33,7 +33,7 @@ This will be lengthy if the system has a large number of nodes.}
   \item{global.pseudo.diameter}{A sum of all diameters in the set plus the psuedo-diameter bridges required to putatively connect all components.}
   \item{symmetric}{Is the resulting sociomatrix symmetric?}
 }
-\author{Andrew C. Thomas <acthomas@fas.harvard.edu>}
+\author{Andrew C. Thomas <act@acthomas.ca>}
 \examples{
 
 sources <- c(1,2,3,4)

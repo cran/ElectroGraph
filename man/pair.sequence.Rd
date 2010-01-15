@@ -13,7 +13,7 @@ pair.sequence(nn)
 \value{
 An (n-choose-2)-by-2 matrix whose rows take values (1,2), (1,3), ... (n-1,n).
 }
-\author{Andrew C. Thomas <acthomas@fas.harvard.edu>}
+\author{Andrew C. Thomas <act@acthomas.ca>}
 
 \examples{
 pair.sequence(5)

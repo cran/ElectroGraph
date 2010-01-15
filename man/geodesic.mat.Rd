@@ -16,7 +16,7 @@ An n-by-n matrix; cell (i,j) contains the shortest distance from point i to poin
 \note{
 This function is automatically executed by the electrograph() initialization routine.
 }
-\author{Andrew C. Thomas <acthomas@fas.harvard.edu>}
+\author{Andrew C. Thomas <act@acthomas.ca>}
 
 \examples{
 

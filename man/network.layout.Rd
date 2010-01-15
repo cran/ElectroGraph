@@ -26,7 +26,7 @@ network.layout(sociomatrix, distances,
 \note{
 	The algorithm can technically handle any dimensionality in the data, and is written for expandability; however, in its current form, as only two-dimensional plotting is supported in the package (and three-dimensional visualization the maximum supported by the human brain) the layout dimension is restricted in this routine.
 }
-\author{Andrew C. Thomas <acthomas@fas.harvard.edu>}
+\author{Andrew C. Thomas <act@acthomas.ca>}
 
 \examples{
 

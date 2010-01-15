@@ -12,7 +12,8 @@ export(network.layout,
 			compute.volts.symmetric,
 			electrograph.exam,
 			plot.wedding.cake,
-			animate.plot.series)
+			animate.plot.series,
+			clustering.statistics)
 
 S3method(plot,electrograph)
 S3method(print,electrograph)

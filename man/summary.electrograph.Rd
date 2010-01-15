@@ -21,7 +21,7 @@ Given an electrograph object, summarize the qualities of its nodes.
   \item{cent.electro}{Electro-social centrality: the sums of the effective conductances from a node to each other node in the system. Defined only if electrograph.exam has been run on the object.}
   \item{current.cent}{Electro-betweenness measure: the average current through each node, given each node pair for which the effective conductance was measured.}
 }
-\author{Andrew C. Thomas <acthomas@fas.harvard.edu>}
+\author{Andrew C. Thomas <act@acthomas.ca>}
 \examples{
 
 sources <- c(1,2,3,4)

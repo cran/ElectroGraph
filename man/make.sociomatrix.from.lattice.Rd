@@ -14,7 +14,7 @@ make.sociomatrix.from.lattice(pts.nby2)
 \value{
   A sociomatrix whose entries correspond to indicators of whether the points are exactly 1 unit apart.
 }
-\author{Andrew C. Thomas <acthomas@fas.harvard.edu>}
+\author{Andrew C. Thomas <act@acthomas.ca>}
 
 \examples{
 # generate a 5-by-5 grid of points.

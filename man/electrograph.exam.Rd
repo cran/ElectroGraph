@@ -26,7 +26,7 @@ The original electrograph object, augmented with electro-social quantities:
 \note{
   This is currently performed automatically when the constructor function ``electrograph'' is called, but can be executed manually as well.
 }
-\author{Andrew C. Thomas}
+\author{Andrew C. Thomas <act@acthomas.ca>}
 \examples{
 latt <- cbind(rep(1:5,5),sort(rep(1:5,5)))
 latt.e <- electrograph (make.sociomatrix.from.lattice(latt), perform.exam=FALSE)

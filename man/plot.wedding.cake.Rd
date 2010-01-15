@@ -28,7 +28,7 @@ plot.wedding.cake(x, distance.mode="shortest.path", plot.mode="kamada.kawai",
 \value{
 	Creates a series of plots in the PNG format corresponding to the choices of bounds in a directory named for ``filebase''.	
 }
-\author{Andrew C. Thomas <acthomas@fas.harvard.edu>}
+\author{Andrew C. Thomas <act@acthomas.ca>}
 \examples{
 
 #A sample Erdos-Renyi type graph for wedding caking.

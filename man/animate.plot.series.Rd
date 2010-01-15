@@ -19,7 +19,7 @@ animate.plot.series(plots.to.animate, intermediates=10, filebase="electro-animat
 	Creates a series of plots in the PNG format in a directory named for ``filebase''.	Also produces a shell script to produce an animated GIF of the sequence using the program ImageMagick.
 	Function outputs the list of files produced in the animation.
 }
-\author{Andrew C. Thomas <acthomas@fas.harvard.edu>}
+\author{Andrew C. Thomas <act@acthomas.ca>}
 \examples{
 
 #uses data "newcomb" in this set.

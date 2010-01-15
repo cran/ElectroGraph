@@ -34,6 +34,7 @@ make.sociomatrix.from.edges <- function(inputmat,symmetric=FALSE) {
                      match(inputmat[,2],id.names))
   old.labels <- inputmat[,1:2]
   inputmat[,1:2] <- new.pairs
+  inputmat <- array(as.numeric(inputmat),dim(inputmat))
   
   if (cols==2 & symmetric) for (kk in 1:dim(inputmat)[1]) {
     outmat[inputmat[kk,1],inputmat[kk,2]] <- outmat[inputmat[kk,2],inputmat[kk,1]] <- 1 }
@@ -78,6 +79,7 @@ geodesic.mat <- function(sociomatrix) {
   } else {
     
     diag(distance) <- 0
+    distance <- as.double(distance)
     maxval <- sum(distance[is.finite(distance) & !is.na(distance)])
     distance[is.infinite(distance)] <- maxval
     if (any(is.na(distance))) {
@@ -99,8 +101,11 @@ geodesic.mat <- function(sociomatrix) {
 
 #assembles weakly connected components.
 network.components <- function(sociomatrix,
-                       pseudo.diameter.bridge=2) {
+                               pseudo.diameter.bridge=2,
+                               minimum.relative.strength.for.tie=1e-8) {
   n.pts <- dim(sociomatrix)[1]
+  maxtie <- max(sociomatrix)
+  sociomatrix[sociomatrix < minimum.relative.strength.for.tie*maxtie] <- 0
   true.geodesic <- geodesic.mat(sociomatrix)
 
   sociomatrix <- sociomatrix + t(sociomatrix)
@@ -134,11 +139,11 @@ network.components <- function(sociomatrix,
   return(out)
 }
 
-electrograph <- function(input,symmetric=TRUE,perform.exam=TRUE,
+electrograph <- function(input, symmetric=TRUE, perform.exam=TRUE,
                          enemies.allowed=FALSE, ...) {
   input <- as.matrix(input)
   
-  if (dim(input)[1] == dim(input)[2]) {
+  if (dim(input)[1] == dim(input)[2] & is.numeric(input)) {
     sociomatrix <- input
     if (all(is.null(rownames(sociomatrix)))) {
       rownames(sociomatrix) <- colnames(sociomatrix) <- 1:(dim(sociomatrix)[1])
@@ -147,6 +152,7 @@ electrograph <- function(input,symmetric=TRUE,perform.exam=TRUE,
     sociomatrix <- make.sociomatrix.from.edges(input,symmetric)
   }
 
+  
   #reset symmetric now.
   symmetric <- all(sociomatrix==t(sociomatrix))
   nonnegative <- all(sociomatrix >= 0)
@@ -181,7 +187,19 @@ electrograph <- function(input,symmetric=TRUE,perform.exam=TRUE,
   
   return (out)
 }
-                         
+
+clustering.statistics <- function(sociomatrix) {
+  nn <- dim(sociomatrix)[1]
+  clusts <- .C("clustering_statistics_c",
+               socio=as.double(sociomatrix),
+               nn=as.integer(nn),
+               transitives=as.double(rep(0,nn)),
+               cycles=as.double(rep(0,nn)))
+  out <- data.frame(transitives=clusts$transitives,
+                    cycles=clusts$cycles)
+  return(out)
+}
+
 summary.electrograph <- function(object, ...) {
   #quantities:
   #node level: electro-distance centrality, standard centrality, average current centrality
@@ -189,6 +207,8 @@ summary.electrograph <- function(object, ...) {
 
   #weighted in/out degrees.
 
+  #writeLines ("Wake up, Neo.")
+  
   out.deg <- apply(object$grand.sociomatrix,1,sum)
   in.deg <- apply(object$grand.sociomatrix,2,sum)
   

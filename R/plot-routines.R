@@ -3,7 +3,7 @@
 #Last updated: June 21, 2009
 
 #already vectorized.
-super.debug <- 1
+super.debug <- 0
 
 shades <- function(howdark,signs=1*howdark) {
   out <- rep("#000000",length(howdark))
@@ -163,6 +163,7 @@ maxrotate <- function(block,tries=16) {
 
 
 rotate.adapt <- function(coords,first.point=pi) {
+  if (super.debug) writeLines(paste(coords[1:2]))
   if (dim(coords)[2] == 2) {
     coords <- t(t(coords)-apply(coords,2,mean))
     
@@ -216,6 +217,11 @@ block.layout.internal <- function(blockdims, width.height.ratio=1.5) {
 
     #find the lowest clear point.
     empties <- which(out.block==0)
+    if (length(empties)==0) {
+      out.block <- rbind(out.block,rep(0,dim(out.block)[2]))
+      out.block <- cbind(out.block,rep(0,dim(out.block)[1]))
+      empties <- which(out.block==0)
+    }
     empties <- empties[order(grid.summary(empties,dim(out.block)[1]))]
     index <- 1
     sx <- (empties[1]-1) %% dim(out.block)[1] + 1
@@ -239,6 +245,7 @@ block.layout.internal <- function(blockdims, width.height.ratio=1.5) {
       }
       sx <- (empties[index]-1) %% dim(out.block)[1] + 1
       sy <- trunc((empties[index]-1) / dim(out.block)[1]) + 1
+
     }
 
     out.block[sx-1 + 1:blockdims[pick,1], sy-1 + 1:blockdims[pick,2]] <- pick
@@ -319,7 +326,7 @@ block.layout <- function(listcoords, bound.factor=1, width.height.factor=1) {
 
 plot.electrograph.core <- function(all.coords, sociomatrix, line.thickness=NULL, new.coord.hold=NULL,
                                    node.colors=NULL, label.colors=NULL, pts.cex=1.5, 
-                                   label.cex=1.5, component.border.col=5,
+                                   label.cex=1.5, component.border.col=8,
                                    edges.relative.to.minimum=FALSE,
                                    source.sink.pair=NULL,
 
@@ -345,10 +352,17 @@ plot.electrograph.core <- function(all.coords, sociomatrix, line.thickness=NULL,
   plot(c(0,max.x), c(0,max.y), ty="n",axes=FALSE,xlab="",ylab="",...)
   
   #print outline blocks.
-  if (!is.null(new.coord.hold)) for (kk in 1:length(new.coord.hold$coords)) {
-    boxy <- cbind(new.coord.hold$origins[,kk],
+  if (!is.null(new.coord.hold)) {
+    segs <- array(NA,c(length(new.coord.hold$coords)*4,4))
+    for (kk in 1:length(new.coord.hold$coords)) {
+      xy <- c(new.coord.hold$origins[,kk],
                   new.coord.hold$origins[,kk]+new.coord.hold$block.size[,kk])
-    lines(boxy[1,c(1,1,2,2,1)],boxy[2,c(1,2,2,1,1)],col=component.border.col,lty=2)
+      segs[4*(kk-1)+1:4,] <- xy[c(1,1,1,3,
+                                  2,2,4,2,
+                                  1,3,3,3,
+                                  4,2,4,4)]
+    }
+    segments(segs[,1], segs[,2], segs[,3], segs[,4], col=component.border.col,lty=2)
   }
   
   #sort edges from dark to light
@@ -415,13 +429,15 @@ plot.electrograph.core <- function(all.coords, sociomatrix, line.thickness=NULL,
 
 plot.electrograph <- function(x, distance.mode=c("shortest.path","electro.social"),
                               plot.mode=c("kamada.kawai","fruchterman.reingold"),
-                              ego.focus=NULL, manual.coords=NULL, redo.coordinates=FALSE,
+                              ego.focus=NULL, manual.coords=NULL,
+                              redo.coordinates=FALSE,
                               just.coordinates=FALSE,
                               
                               node.colors=NULL, label.colors=NULL, pts.cex=1.5, 
-                              label.cex=1.5, component.border.col=5,
+                              label.cex=1.5, component.border.col=8,
 
-                              edge.thickness=c("standard","electro.betweenness"), max.thick=2,
+                              edge.thickness=c("standard","electro.betweenness"),
+                              max.thick=2,
                               source.sink.pair=NULL,
                               previous.electrograph.plot.object=NULL,
 
@@ -431,7 +447,7 @@ plot.electrograph <- function(x, distance.mode=c("shortest.path","electro.social
                               
                               ...) {
 
-  #distance.mode="shortest.path"; plot.mode="kamada.kawai"; ego.focus=NULL; manual.coords=NULL; redo.coordinates=FALSE; just.coordinates=FALSE; max.thick=2; node.colors=NULL; label.colors=NULL; pts.cex=1.5; label.cex=1.5; component.border.col=5; x=graphy
+  #distance.mode="shortest.path"; plot.mode="kamada.kawai"; ego.focus=NULL; manual.coords=NULL; redo.coordinates=FALSE; just.coordinates=FALSE; max.thick=2; node.colors=NULL; label.colors=NULL; pts.cex=1.5; label.cex=1.5; component.border.col=5; bound.size=1;  width.height.factor=1;  tick.marks=FALSE; previous.electrograph.plot.object=NULL; source.sink.pair=NULL; edge.thickness=c("standard","electro.betweenness")
   
   if (class(x)!="electrograph")
     stop("plot.electrograph has been given an object of incorrect class.")
@@ -516,9 +532,9 @@ plot.electrograph <- function(x, distance.mode=c("shortest.path","electro.social
         last.coords <- previous.electrograph.plot.object$coordinates
       } else last.coords <- NULL
       
-      t.coords <- network.layout(x$sociomatrices[[kk]],little.distances,
+      t.coords <- network.layout(x$sociomatrices[[kk]], little.distances,
                                  plot.mode, ego.focus=ego.focus,
-                                 initial.coordinates=last.coords)
+                                 initial.coordinates=last.coords, niter=100)
       coords.list[[kk]] <- t.coords
       
       rownames(coords.list[[kk]]) <- rownames(x$sociomatrices[[kk]])
@@ -534,6 +550,7 @@ plot.electrograph <- function(x, distance.mode=c("shortest.path","electro.social
   #if (debug.mode) message("Getting block layout")
   nc.hld <- block.layout(coords.list, bound.size, width.height.factor)
   sociomatrix <- x$grand.socio
+
   
   all.coords <- NULL
   names <- NULL

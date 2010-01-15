@@ -22,7 +22,7 @@ To create an ElectroGraph object, specify an edge list or sociomatrix.
 \author{
 Andrew C. Thomas
 
-Maintainer: Andrew C. Thomas <acthomas@fas.harvard.edu>
+Maintainer: Andrew C. Thomas <act@acthomas.ca>
 }
 \references{
 Andrew C. Thomas (2009) ``Hierarchical Models for Relational Data''.
