@@ -30,9 +30,9 @@ for (kk in 1:dim(newcomb)[3]) {
 }
 
 newcomb.plot <- list(NA)
-newcomb.plot[[1]] <- plot(newcomb.electro[[1]],distance.mode="electro.social", just=TRUE)
+newcomb.plot[[1]] <- plot(newcomb.electro[[1]],connectivity.mode="ohmic", just=TRUE)
 for (kk in 2:length(newcomb.electro))
-  newcomb.plot[[kk]] <- plot(newcomb.electro[[kk]],distance.mode="electro.social", 
+  newcomb.plot[[kk]] <- plot(newcomb.electro[[kk]],connectivity.mode="ohmic", 
 										just=TRUE, previous.elec=newcomb.plot[[kk-1]])
 
 animate.plot.series(newcomb.plot)

@@ -20,7 +20,7 @@ Calculate the transitive counts and cycles in a sociomatrix.
 # generate a 5-by-5 grid of points.
 pts <- cbind(rep(1:5,5),sort(rep(1:5,5)))
 socio <- make.sociomatrix.from.lattice(pts)
-clustering.statistics(socio)
+clustering.statistics(socio$sociomatrix)
 
 }
 

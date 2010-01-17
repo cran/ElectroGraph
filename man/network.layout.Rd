@@ -5,20 +5,23 @@
 Given a table of ideal distances and a sociomatrix, calculate the projected coordinates under force-directed placement.
 }
 \usage{
-network.layout(sociomatrix, distances,
-               plot.mode=c("fruchterman.reingold","kamada.kawai"),
-               layout.dimension=2, ego.focus=NULL, initial.coordinates = NULL,
-               niter = 500, initemp = 10, sigma = NULL)
+network.layout(connectivity,
+               force.mode=c("fruchterman.reingold","kamada.kawai"),
+               layout.dimension=2, 
+					ego.focus=NULL, 
+					initial.coordinates = NULL,
+               verbose=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{sociomatrix}{An n-by-n matrix containing the values of ties between n individuals.}
-  \item{distances}{An n-by-n matrix containing the ideal distances (typically, by shortest path or electro-social) between n individuals.}
-  \item{plot.mode}{Either of the above two methods for force-directed placement.}
+  \item{connectivity}{An n-by-n matrix containing the values of the
+    connective forces among the n individuals (inverse distance).}
+  \item{force.mode}{Either of the above two methods for force-directed placement.}
   \item{layout.dimension}{Of 1, 2 or 3, the dimension of the output coordinates.}
   \item{ego.focus}{A vector of node indices for which priority should be made highest for their relative distances.}
   \item{initial.coordinates}{If specified, the algorithm will begin at the specified coordinates rather than a randomly generated set.}
-  \item{niter, initemp, sigma}{Quantities for use in the simulated annealing portions of the algorithm.}
+  \item{verbose}{If TRUE, display additional information while running.}
+	
 }
 \value{
 	An n-by-(layout.dimension) table of coordinates.
@@ -31,8 +34,8 @@ network.layout(sociomatrix, distances,
 \examples{
 
 latt <- cbind(rep(1:5,5),sort(rep(1:5,5)))
-latt.e <- electrograph (make.sociomatrix.from.lattice(latt))
-latt.coords <- network.layout(latt.e$grand.socio, latt.e$geodesic)
+latt.e <- electrograph (make.sociomatrix.from.lattice(latt)$sociomatrix)
+latt.coords <- network.layout(1/latt.e$geodesic)
 
 print(latt.coords)
 

@@ -1,106 +1,117 @@
 #electro-social-specific commands.
 #Andrew C. Thomas
-#May 21, 2009
+#January 20, 2010
 
 #notation:
 #voltages, currents in each node suppressed.
 #avg.current, red.current obsolete.
 #now: blk/red.curr.a/v
 #
+#transforms: avg.current.black/red.a/v/p
+#
 
+debugmode <- 0
 
-solve.twosome <- function(sociomatrix,src,snk) {
+solve.twosome <- function(sociomatrix, fidelity, src, snk) {
   if (any(dim(sociomatrix)!=2))
     stop("solve.twosome should only be used on two-by-two sociomatrices.")
   resist <- rep(Inf,length(src))
   voltages <- currents <- array(0,c(2,length(src)))
-  blk.curr.a <- blk.curr.v <- blk.curr.p <-
-    red.curr.a <- red.curr.v <- red.curr.p <- array(0,rep(2,2))
-  fidelity <- rep(1,length(src))
+  avg.current.black.a <- avg.current.black.v <- avg.current.black.p <-
+    avg.current.red.a <- avg.current.red.v <- avg.current.red.p <- array(0,rep(2,2))
+  fidelity.out <- rep(1,length(src))
   
   for (kk in 1:length(src)) if (src[kk]!=snk[kk]) {
-    resist[kk] <- 1/abs(sociomatrix[src[kk],snk[kk]])
-    fidelity[kk] <- 1*(sociomatrix[src[kk],snk[kk]]>0)-
-      1*(sociomatrix[src[kk],snk[kk]]<0)
+    resist[kk] <- 1/sociomatrix[src[kk],snk[kk]]
+    fidelity.out[kk] <- fidelity[src[kk],snk[kk]]
     
     if (src[kk]==1) {
       voltages[,kk] <- c(1,0)
-      currents[,kk] <- c(abs(sociomatrix[src[kk],snk[kk]]),0)
+      currents[,kk] <- c(sociomatrix[src[kk],snk[kk]],0)
     } else {
       voltages[,kk] <- c(0,1)
-      currents[,kk] <- c(0,abs(sociomatrix[src[kk],snk[kk]]))
+      currents[,kk] <- c(0,sociomatrix[src[kk],snk[kk]])
     }
     
-    blk.curr.a[src[kk],snk[kk]] <- abs(sociomatrix[src[kk],snk[kk]])*(sociomatrix[src[kk],snk[kk]]>0)
-    red.curr.a[src[kk],snk[kk]] <- abs(sociomatrix[src[kk],snk[kk]])*(sociomatrix[src[kk],snk[kk]]<0)
+    avg.current.black.a[src[kk],snk[kk]] <- sociomatrix[src[kk],snk[kk]]*(1+fidelity[src[kk],snk[kk]])/2
+    avg.current.red.a[src[kk],snk[kk]] <- sociomatrix[src[kk],snk[kk]]*(1-fidelity[src[kk],snk[kk]])/2
 
-    blk.curr.v[src[kk],snk[kk]] <- blk.curr.a[src[kk],snk[kk]]/resist[kk]
-    red.curr.v[src[kk],snk[kk]] <- red.curr.a[src[kk],snk[kk]]/resist[kk]
-    blk.curr.p[src[kk],snk[kk]] <- blk.curr.a[src[kk],snk[kk]]/sqrt(resist[kk])
-    red.curr.p[src[kk],snk[kk]] <- red.curr.a[src[kk],snk[kk]]/sqrt(resist[kk])
+    avg.current.black.v[src[kk],snk[kk]] <- avg.current.black.a[src[kk],snk[kk]]/resist[kk]
+    avg.current.red.v[src[kk],snk[kk]] <- avg.current.red.a[src[kk],snk[kk]]/resist[kk]
+    avg.current.black.p[src[kk],snk[kk]] <- avg.current.black.a[src[kk],snk[kk]]/sqrt(resist[kk])
+    avg.current.red.p[src[kk],snk[kk]] <- avg.current.red.a[src[kk],snk[kk]]/sqrt(resist[kk])
   }
   
   out <- list(resist=resist,
               voltages=voltages,
               currents=currents,
 
-              blk.curr.a=blk.curr.a,
-              red.curr.a=red.curr.a,
-              blk.curr.v=blk.curr.v,
-              red.curr.v=red.curr.v,        
-              blk.curr.p=blk.curr.p,
-              red.curr.p=red.curr.p,        
+              avg.current.black.a=avg.current.black.a,
+              avg.current.red.a=avg.current.red.a,
+              avg.current.black.v=avg.current.black.v,
+              avg.current.red.v=avg.current.red.v,        
+              avg.current.black.p=avg.current.black.p,
+              avg.current.red.p=avg.current.red.p,        
 
-              fidelity=fidelity)
+              fidelity=fidelity.out)
   
   return(out)
 }
 
 #as yet to be converted.
-compute.volts.symmetric <- function(sociomatrix,src,snk) {
+#one source-sink pair, mostly for testing.
+compute.volts.symmetric <- function(sociomatrix, src, snk, fidelities=NULL) {
+
+  if (is.null(fidelities)) fidelities = array(1,dim(sociomatrix))
   if (any(sociomatrix!=t(sociomatrix))) stop ("Symmetric matrix routine given nonsymmetric input.")
   n.pts <- dim(sociomatrix)[1]
   if (!any(src==1:n.pts))
-    stop ("In compute.volts, source isn't one of the nodes indicated.")
+    stop ("In compute.volts.symmetric, source isn't one of the nodes indicated.")
   if (!any(snk==1:n.pts))
-    stop ("In compute.volts, sink isn't one of the nodes indicated.")
-  if (src==snk) stop ("In compute.volts, source and sink can't be identical.")
+    stop ("In compute.volts.symmetric, sink isn't one of the nodes indicated.")
+  if (src==snk) stop ("In compute.volts.symmetric, source and sink can't be identical.")
 
   voltages <- currents <- rep(0,n.pts)
   resist.eq <- 1234567891; fidelity <- 1
 
   if (n.pts>2) {
     res <- .C("solve_volts_symmetric_c",
-              as.double(sociomatrix), as.integer(n.pts),
+              as.double(sociomatrix), as.double(fidelities),
+              as.integer(n.pts),
               as.integer(src-1), as.integer(snk-1),
               resist.eq=as.double(resist.eq),
-              fidelity=as.double(fidelity),
+              fidelity=as.double(fidelities),
               voltages=as.double(voltages), currents=as.double(currents))
   } else {
-    res <- solve.twosome(sociomatrix,src,snk)
+    res <- solve.twosome(sociomatrix, fidelities,
+                         src, snk)
   }
   return(list(resist.eq=res$resist, voltages=res$volt,
               current.out=res$curr, fidelity=res$fidelity))
 }
 
 
-compute.volts.asymmetric <- function(sociomatrix,src,snk) {
+compute.volts.asymmetric <- function(sociomatrix, src, snk, fidelities = NULL) {
+
+  if (is.null(fidelities)) fidelities = array(1,dim(sociomatrix))
   n.pts <- dim(sociomatrix)[1]
-  if (!any(src==1:n.pts)) stop ("In compute.volts, source isn't one of the nodes indicated.")
-  if (!any(snk==1:n.pts)) stop ("In compute.volts, sink isn't one of the nodes indicated.")
-  if (src==snk) stop ("In compute.volts, source and sink can't be identical.")
+  if (!any(src==1:n.pts)) stop ("In compute.volts.asymmetric, source isn't one of the nodes indicated.")
+  if (!any(snk==1:n.pts)) stop ("In compute.volts.asymmetric, sink isn't one of the nodes indicated.")
+  if (src==snk) stop ("In compute.volts.asymmetric, source and sink can't be identical.")
 
   voltages <- currents <- rep(0,n.pts)
   resist.eq <- 1234567890; fidelity <- 1
   
   if (n.pts>2) {
     res <- .C("solve_volts_notsymmetric_c",
-              as.double(sociomatrix), as.integer(n.pts),
+              as.double(sociomatrix), as.double(fidelities),
+              as.integer(n.pts),
               as.integer(src-1), as.integer(snk-1),
               resist.eq=as.double(resist.eq), fidelity=as.double(fidelity),
               voltages=as.double(voltages), currents=as.double(currents))
   } else {
-    res <- solve.twosome(sociomatrix,src,snk)
+    res <- solve.twosome(sociomatrix, fidelities,
+                         src, snk)
   }
   return(list(resist.eq=res$resist, voltages=res$volt,
               current.out=res$curr, fidelity=res$fidelity))
@@ -110,7 +121,8 @@ compute.volts.asymmetric <- function(sociomatrix,src,snk) {
 #assumes nondirectional for now, but can do enemies... sort of.
 #worry about directional in v2.0.
 #currently not used.
-get.resistance.really.fast <- function(sociomatrix, sources, sinks) {
+get.resistance.really.fast <- function(sociomatrix, fidelities,
+                                       sources, sinks) {
   #sociomatrix <- test.e$grand.socio; s.s <- pair.sequence(dim(sociomatrix)[1])
   #sources <- s.s[,1]; sinks <- s.s[,2]
   #outcomes: resist, fidelity, volt, curr, avg.current, red.current
@@ -120,10 +132,10 @@ get.resistance.really.fast <- function(sociomatrix, sources, sinks) {
   
   out.resist <- rep(NA,dim(s.s)[1])
   out.fid <- rep(1,dim(s.s)[1])
-  blk.curr.a <- blk.curr.v <- red.curr.a <- red.curr.v <- array(0,rep(nn,2))
+  avg.current.black.a <- avg.current.black.v <- avg.current.red.a <- avg.current.red.v <- array(0,rep(nn,2))
   
-  big.laplacian <- -abs(sociomatrix)
-  diag(big.laplacian) <- apply(abs(sociomatrix),1,sum)
+  big.laplacian <- -sociomatrix
+  diag(big.laplacian) <- apply(sociomatrix, 1, sum)
 
   #fixes jams with disconnected pieces.
   diag(big.laplacian)[diag(big.laplacian)==0] <- 1  
@@ -158,6 +170,7 @@ get.resistance.really.fast <- function(sociomatrix, sources, sinks) {
       #feeding the 1A version.
       enemy.back <- .C("process_for_enemies_c",
                        sociomatrix=as.double(sociomatrix),
+                       fidelities=as.double(fidelities),
                        voltages=as.double(voltages),
                        avg.current=as.double(rep(0,nn^2)),
                        red.current=as.double(rep(0,nn^2)),
@@ -166,36 +179,36 @@ get.resistance.really.fast <- function(sociomatrix, sources, sinks) {
                        nn=as.integer(nn))
       
       out.fid[kk] <- enemy.back$tot.fid
-      blk.curr.a <- blk.curr.a + enemy.back$avg.current
-      red.curr.a <- red.curr.a + enemy.back$red.current
-      blk.curr.v <- blk.curr.v + enemy.back$avg.current/out.resist[kk]
-      red.curr.v <- red.curr.v + enemy.back$red.current/out.resist[kk]
+      avg.current.black.a <- avg.current.black.a + enemy.back$avg.current
+      avg.current.red.a <- avg.current.red.a + enemy.back$red.current
+      avg.current.black.v <- avg.current.black.v + enemy.back$avg.current/out.resist[kk]
+      avg.current.red.v <- avg.current.red.v + enemy.back$red.current/out.resist[kk]
       
     } else {
       
       vv.hold <- array(voltages,c(nn,nn))-t(array(voltages,c(nn,nn)))
       avg.current <- vv.hold*sociomatrix*(vv.hold>0)
-      blk.curr.a <- blk.curr.a + avg.current
-      blk.curr.v <- blk.curr.v + avg.current/out.resist[kk]
+      avg.current.black.a <- avg.current.black.a + avg.current
+      avg.current.black.v <- avg.current.black.v + avg.current/out.resist[kk]
     }
 
     if (kk %% 1000 == 0) print(kk)
   }
 
-  #blk.curr.a <- blk.curr.a/length(sources)
-  #red.curr.a <- red.curr.a/length(sources)
-  #blk.curr.v <- blk.curr.v/length(sources)
-  #red.curr.v <- red.curr.v/length(sources)
+  #avg.current.black.a <- avg.current.black.a/length(sources)
+  #avg.current.red.a <- avg.current.red.a/length(sources)
+  #avg.current.black.v <- avg.current.black.v/length(sources)
+  #avg.current.red.v <- avg.current.red.v/length(sources)
   
   #outcomes: resist, fidelity, volt, curr, avg.current, red.current
   return(list(resist=out.resist,
               fidelity=out.fid,
               volt=0, curr=0,
               
-              blk.curr.a=blk.curr.a,
-              red.curr.a=red.curr.a,
-              blk.curr.v=blk.curr.v,
-              red.curr.v=red.curr.v,
+              avg.current.black.a=avg.current.black.a,
+              avg.current.red.a=avg.current.red.a,
+              avg.current.black.v=avg.current.black.v,
+              avg.current.red.v=avg.current.red.v,
 
               ll.1=ll.1,
               ll.2=ll.2,
@@ -211,6 +224,8 @@ get.resistance.really.fast <- function(sociomatrix, sources, sinks) {
 get.resistance <- function(e.graph, sources, sinks) {
   #e.graph <- electrograph(array(c(0,0,0,1,0,0,0,1,0),rep(3,2))); sources=1; sinks=3
 
+  if (debugmode) message("get.resistance")
+  
   if (class(e.graph)!="electrograph")
     stop ("get.resistance takes an object of class electrograph.")
   if (length(sources)!=length(sinks))
@@ -239,23 +254,23 @@ get.resistance <- function(e.graph, sources, sinks) {
   groups <- unique(source.components)
   #identified: (se,sk) with same component.
 
-  if (debug.mode) print(source.components)
+  if (debugmode) print(source.components)
 
   #networks over 150: too big to store extra info.
   
   out.conducts <- out.resists <- out.fidelity <- rep(0,length(sources))
-  out.blk.curr.a <- out.red.curr.a <-
-    out.blk.curr.v <- out.red.curr.v <-
-      out.blk.curr.p <- out.red.curr.p <- array(0,rep(n.pts,2))
+  out.avg.current.black.a <- out.avg.current.red.a <-
+    out.avg.current.black.v <- out.avg.current.red.v <-
+      out.avg.current.black.p <- out.avg.current.red.p <- array(0,rep(n.pts,2))
   
   out.primers <- array(0,c(n.pts,n.pts,3))
   
   for (kk in groups) if (kk>0) {
-    if (debug.mode) cat("in ",kk,"\n")
+    if (debugmode) message(paste("in ",kk))
     subset <- which(source.components==kk)
     node.subset <- match(rownames(e.graph$sociomatrices[[kk]]),
                          rownames(e.graph$grand.sociomatrix))
-    if (debug.mode) {print(subset); print(node.subset)}
+    if (debugmode) {print(subset); print(node.subset)}
     sources.true <- sources[subset]
     sinks.true <- sinks[subset]
     n.pts.piece <- dim(e.graph$sociomatrices[[kk]])[1]
@@ -263,20 +278,21 @@ get.resistance <- function(e.graph, sources, sinks) {
     snk <- match(sinks.true,rownames(e.graph$sociomatrices[[kk]]))
 
     this.one.symmetric <- all(e.graph$sociomatrices[[kk]] == t(e.graph$sociomatrices[[kk]]))
-
+    
     if (length(node.subset)==2) {
       #src snk must be (1,2), (2,1) or both.
-      result <- solve.twosome(e.graph$sociomatrices[[kk]],src,snk)
+      result <- solve.twosome(e.graph$sociomatrices[[kk]], e.graph$fidelities[[kk]],
+                              src, snk)
       out.conducts[subset] <- 1/result$resist
       out.resists[subset] <- result$resist
       out.fidelity[subset] <- result$fidelity
 
-      out.blk.curr.a[node.subset,node.subset] <- result$blk.curr.a
-      out.red.curr.a[node.subset,node.subset] <- result$red.curr.a
-      out.blk.curr.v[node.subset,node.subset] <- result$blk.curr.v
-      out.red.curr.v[node.subset,node.subset] <- result$red.curr.v
-      out.blk.curr.p[node.subset,node.subset] <- result$blk.curr.p
-      out.red.curr.p[node.subset,node.subset] <- result$red.curr.p
+      out.avg.current.black.a[node.subset,node.subset] <- result$avg.current.black.a
+      out.avg.current.red.a[node.subset,node.subset] <- result$avg.current.red.a
+      out.avg.current.black.v[node.subset,node.subset] <- result$avg.current.black.v
+      out.avg.current.red.v[node.subset,node.subset] <- result$avg.current.red.v
+      out.avg.current.black.p[node.subset,node.subset] <- result$avg.current.black.p
+      out.avg.current.red.p[node.subset,node.subset] <- result$avg.current.red.p
 
     } else {
     
@@ -295,21 +311,26 @@ get.resistance <- function(e.graph, sources, sinks) {
       out.conducts.piece <- out.resists.piece <-
         out.fidelity.piece <- rep(-3,length(newsrc))
 
+      if (debugmode) print(e.graph$fidelities[[kk]])
+      
       if (this.one.symmetric) {
         result <- .C("get_resistances_fast_symmetric_c",
-                     as.double(e.graph$sociomatrices[[kk]]), as.integer(n.pts.piece),
+                     as.double(e.graph$sociomatrices[[kk]]),
+                     as.double(e.graph$fidelities[[kk]]),
+
+                     as.integer(n.pts.piece),
                      as.integer(newsrc-1), as.integer(newsnk-1),
                      as.integer(length(newsrc)),
                      
                      resist=as.double(out.resists.piece),
                      fidelity=as.double(out.fidelity.piece),
                    
-                     blk.curr.a=as.double(rep(-7,n.pts.piece^2)),
-                     red.curr.a=as.double(rep(-7,n.pts.piece^2)),
-                     blk.curr.v=as.double(rep(-7,n.pts.piece^2)),
-                     red.curr.v=as.double(rep(-7,n.pts.piece^2)),
-                     blk.curr.p=as.double(rep(-7,n.pts.piece^2)),
-                     red.curr.p=as.double(rep(-7,n.pts.piece^2)),
+                     avg.current.black.a=as.double(rep(-7,n.pts.piece^2)),
+                     avg.current.red.a=as.double(rep(-7,n.pts.piece^2)),
+                     avg.current.black.v=as.double(rep(-7,n.pts.piece^2)),
+                     avg.current.red.v=as.double(rep(-7,n.pts.piece^2)),
+                     avg.current.black.p=as.double(rep(-7,n.pts.piece^2)),
+                     avg.current.red.p=as.double(rep(-7,n.pts.piece^2)),
                      
                      ll.1=as.double(rep(-9,(n.pts.piece-1)^2)),
                      ll.2=as.double(rep(-9,(n.pts.piece-1)^2)),
@@ -317,19 +338,22 @@ get.resistance <- function(e.graph, sources, sinks) {
                      )
       } else {
         result <- .C("get_resistances_c",
-                     as.double(e.graph$sociomatrices[[kk]]), as.integer(n.pts.piece),
+                     as.double(e.graph$sociomatrices[[kk]]),
+                     as.double(e.graph$fidelities[[kk]]),
+
+                     as.integer(n.pts.piece),
                      as.integer(newsrc-1), as.integer(newsnk-1),
                      as.integer(length(newsrc)),
 
                      resist=as.double(out.resists.piece),
                      fidelity=as.double(out.fidelity.piece),
                    
-                     blk.curr.a=as.double(rep(-7,n.pts.piece^2)),
-                     red.curr.a=as.double(rep(-7,n.pts.piece^2)),
-                     blk.curr.v=as.double(rep(-7,n.pts.piece^2)),
-                     red.curr.v=as.double(rep(-7,n.pts.piece^2)),
-                     blk.curr.p=as.double(rep(-7,n.pts.piece^2)),
-                     red.curr.p=as.double(rep(-7,n.pts.piece^2)))
+                     avg.current.black.a=as.double(rep(-7,n.pts.piece^2)),
+                     avg.current.red.a=as.double(rep(-7,n.pts.piece^2)),
+                     avg.current.black.v=as.double(rep(-7,n.pts.piece^2)),
+                     avg.current.red.v=as.double(rep(-7,n.pts.piece^2)),
+                     avg.current.black.p=as.double(rep(-7,n.pts.piece^2)),
+                     avg.current.red.p=as.double(rep(-7,n.pts.piece^2)))
         result$ll.1 <- result$ll.2 <- result$ll.3 <- 0
       }
       
@@ -345,15 +369,15 @@ get.resistance <- function(e.graph, sources, sinks) {
       out.fidelity[subset[-disco]] <- 0
       
     
-      #if (debug.mode) {cat("thru 4",kk,"\n"); print(dim(out.voltages));
+      #if (debugmode) {cat("thru 4",kk,"\n"); print(dim(out.voltages));
       #  print(class(out.voltages));}
 
-      out.blk.curr.a[node.subset,node.subset] <- result$blk.curr.a
-      out.red.curr.a[node.subset,node.subset] <- result$red.curr.a
-      out.blk.curr.v[node.subset,node.subset] <- result$blk.curr.v
-      out.red.curr.v[node.subset,node.subset] <- result$red.curr.v
-      out.blk.curr.p[node.subset,node.subset] <- result$blk.curr.p
-      out.red.curr.p[node.subset,node.subset] <- result$red.curr.p
+      out.avg.current.black.a[node.subset,node.subset] <- result$avg.current.black.a
+      out.avg.current.red.a[node.subset,node.subset] <- result$avg.current.red.a
+      out.avg.current.black.v[node.subset,node.subset] <- result$avg.current.black.v
+      out.avg.current.red.v[node.subset,node.subset] <- result$avg.current.red.v
+      out.avg.current.black.p[node.subset,node.subset] <- result$avg.current.black.p
+      out.avg.current.red.p[node.subset,node.subset] <- result$avg.current.red.p
 
       out.primers[node.subset[-1],node.subset[-1],1] <- result$ll.1
       out.primers[node.subset[-2],node.subset[-2],2] <- result$ll.2
@@ -376,12 +400,12 @@ get.resistance <- function(e.graph, sources, sinks) {
     block <- block/length(sources)
     return(block)
   }
-  out.blk.curr.a <- fixer(out.blk.curr.a)
-  out.red.curr.a <- fixer(out.red.curr.a)
-  out.blk.curr.v <- fixer(out.blk.curr.v)
-  out.red.curr.v <- fixer(out.red.curr.v)
-  out.blk.curr.p <- fixer(out.blk.curr.p)
-  out.red.curr.p <- fixer(out.red.curr.p)
+  out.avg.current.black.a <- fixer(out.avg.current.black.a)
+  out.avg.current.red.a <- fixer(out.avg.current.red.a)
+  out.avg.current.black.v <- fixer(out.avg.current.black.v)
+  out.avg.current.red.v <- fixer(out.avg.current.red.v)
+  out.avg.current.black.p <- fixer(out.avg.current.black.p)
+  out.avg.current.red.p <- fixer(out.avg.current.red.p)
   
   return(list(conductances=out.conducts,
               resistances=out.resists,
@@ -390,12 +414,12 @@ get.resistance <- function(e.graph, sources, sinks) {
               currents.node=0,#out.currents,
               source.sink=cbind(sources,sinks),
 
-              blk.curr.a=out.blk.curr.a,
-              red.curr.a=out.red.curr.a,
-              blk.curr.v=out.blk.curr.v,
-              red.curr.v=out.red.curr.v,
-              blk.curr.p=out.blk.curr.p,
-              red.curr.p=out.red.curr.p,
+              avg.current.black.a=out.avg.current.black.a,
+              avg.current.red.a=out.avg.current.red.a,
+              avg.current.black.v=out.avg.current.black.v,
+              avg.current.red.v=out.avg.current.red.v,
+              avg.current.black.p=out.avg.current.black.p,
+              avg.current.red.p=out.avg.current.red.p,
 
               primers=out.primers
               ))
@@ -406,6 +430,8 @@ get.resistance <- function(e.graph, sources, sinks) {
 #Now done by default when calling the constructor ``electrograph''.
 electrograph.exam <- function(e.graph, sample.edges=FALSE, sample.per=NULL) {
 
+  if (debugmode) message ("electrograph.exam")
+  
   #eg.hold <- e.graph
   if (any(e.graph$grand.socio != t(e.graph$grand.socio))) {
     message("Note: Directed/asymmetric graphs are solved at considerably slower speed than symmetric graphs.")
@@ -436,7 +462,7 @@ electrograph.exam <- function(e.graph, sample.edges=FALSE, sample.per=NULL) {
 
   
   distance.mat <- array(-1,rep(n.pts,2))
-  diag(distance.mat) <- 0
+  diag(distance.mat) <- Inf
   rownames(distance.mat) <- rownames(e.graph$grand.socio)
   colnames(distance.mat) <- colnames(e.graph$grand.socio)
   
@@ -460,32 +486,35 @@ electrograph.exam <- function(e.graph, sample.edges=FALSE, sample.per=NULL) {
 
   e.graph$primers <- out$primers
   
-  e.graph$blk.curr.a <- out$blk.curr.a
-  e.graph$red.curr.a <- out$red.curr.a
-  e.graph$blk.curr.v <- out$blk.curr.v
-  e.graph$red.curr.v <- out$red.curr.v
-  e.graph$blk.curr.p <- out$blk.curr.p
-  e.graph$red.curr.p <- out$red.curr.p
+  e.graph$avg.current.black.a <- out$avg.current.black.a
+  e.graph$avg.current.red.a <- out$avg.current.red.a
+  e.graph$avg.current.black.v <- out$avg.current.black.v
+  e.graph$avg.current.red.v <- out$avg.current.red.v
+  e.graph$avg.current.black.p <- out$avg.current.black.p
+  e.graph$avg.current.red.p <- out$avg.current.red.p
   
   if (e.graph$symmetric) {
-    e.graph$blk.curr.a <- e.graph$blk.curr.a+t(e.graph$blk.curr.a)
-    e.graph$red.curr.a <- e.graph$red.curr.a+t(e.graph$red.curr.a)
-    e.graph$blk.curr.v <- e.graph$blk.curr.v+t(e.graph$blk.curr.v)
-    e.graph$red.curr.v <- e.graph$red.curr.v+t(e.graph$red.curr.v)
-    e.graph$blk.curr.p <- e.graph$blk.curr.p+t(e.graph$blk.curr.p)
-    e.graph$red.curr.p <- e.graph$red.curr.p+t(e.graph$red.curr.p)
+    e.graph$avg.current.black.a <- e.graph$avg.current.black.a+t(e.graph$avg.current.black.a)
+    e.graph$avg.current.red.a <- e.graph$avg.current.red.a+t(e.graph$avg.current.red.a)
+    e.graph$avg.current.black.v <- e.graph$avg.current.black.v+t(e.graph$avg.current.black.v)
+    e.graph$avg.current.red.v <- e.graph$avg.current.red.v+t(e.graph$avg.current.red.v)
+    e.graph$avg.current.black.p <- e.graph$avg.current.black.p+t(e.graph$avg.current.black.p)
+    e.graph$avg.current.red.p <- e.graph$avg.current.red.p+t(e.graph$avg.current.red.p)
   }
   
   return(e.graph)
 }
 
-process.for.enemies <- function(sociomatrix, voltages, current.matrix) {
+process.for.enemies <- function(sociomatrix, fidelities,
+                                voltages, current.matrix) {
   #sociomatrix <- socmat2; voltages <- thing$voltage; current.matrix <- thing$average.currents
   
   sociomatrix <- as.matrix(sociomatrix)
   nn <- dim(sociomatrix)[1]
   res <- .C("process_for_enemies_c",
-            as.double(sociomatrix), as.double(voltages),
+            as.double(sociomatrix),
+            as.double(fidelities),
+            as.double(voltages),
             pos.curr=as.double(current.matrix), 
             neg.curr=as.double(0*current.matrix),
             con.str=as.double(0),

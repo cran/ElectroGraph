@@ -7,8 +7,8 @@
 Given a pair of nodes to act as source and sink, determine the resulting current flow.
 }
 \usage{
-compute.volts.symmetric (sociomatrix,src,snk)
-compute.volts.asymmetric (sociomatrix,src,snk)
+compute.volts.symmetric (sociomatrix, src, snk, fidelities = NULL)
+compute.volts.asymmetric (sociomatrix, src, snk, fidelities = NULL)
 get.resistance (e.graph, sources, sinks)
 }
 \arguments{
@@ -16,6 +16,8 @@ get.resistance (e.graph, sources, sinks)
   \item{e.graph}{An electrograph object.}
   \item{src, snk}{Single values for the source and sink.}
   \item{sources, sinks}{Vectors of source and sink values.}
+  \item{fidelities}{If set, allows for ties that are perceived to be
+    less than ``friends''. (Use with caution -- results have not been peer reviewed!}
 
 }
 \value{
@@ -32,7 +34,7 @@ get.resistance (e.graph, sources, sinks)
 \examples{
 
 latt <- cbind(rep(1:5,5),sort(rep(1:5,5)))
-latt.mat <- make.sociomatrix.from.lattice(latt)
+latt.mat <- make.sociomatrix.from.lattice(latt)$sociomatrix
 print(compute.volts.symmetric(latt.mat,1,25))
 latt.mat[24,25] <- 0
 print(compute.volts.asymmetric(latt.mat,1,25))

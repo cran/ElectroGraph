@@ -5,12 +5,14 @@
 Given an edge list, with or without values, produce the corresponding sociomatrix.
 }
 \usage{
-make.sociomatrix.from.edges(inputmat, symmetric=FALSE)
+make.sociomatrix.from.edges(inputmat, symmetric=FALSE, fidelities=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{inputmat}{A matrix with dimension n-by-(2,3,4); see below for details.}
   \item{symmetric}{If TRUE, creates a symmetric sociomatrix with undirected edges.}
+  \item{fidelities}{If set, allows for ties that are perceived to be
+    less than ``friends''. (Use with caution -- results have not been peer reviewed!}
 }
 \details{
   The first two columns of the matrix are the source and target of each directed edge (undirected if symmetry flag is set to TRUE).

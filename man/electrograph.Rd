@@ -5,15 +5,19 @@
 Given a sociomatrix or an edge list, produce an electrograph object for display and analysis.
 }
 \usage{
-electrograph(input, symmetric=TRUE, perform.exam=TRUE,
-					enemies.allowed=FALSE, ...)
+electrograph(input, symmetric=TRUE, solve.for.shortest.paths=TRUE,
+					ohmic.properties=TRUE, fidelities=NULL, 
+					verbose=FALSE, substitute.names=NULL, ...)
 }
 \arguments{
   \item{input}{A sociomatrix (n-by-n) or edge list (k-by-(2,3,4).}
   \item{symmetric}{Whether the input edge list should be taken as symmetric.}
-  \item{perform.exam}{If true, automatically conducts a full electrograph.exam of the created object. 
-This will be lengthy if the system has a large number of nodes.}
-  \item{enemies.allowed}{If enabled, negative values can be considered as tie strengths. (Use with caution -- results have not been peer reviewed!}
+  \item{solve.for.shortest.paths}{If TRUE, calculates the geodesic distances between nodes.}
+  \item{ohmic.properties}{If TRUE, calculates the Ohmic properties of the network nodes and ties through electrograph.exam. This will be lengthy if the system has a large number of nodes.}
+  \item{fidelities}{If set, allows for ties that are perceived to be
+    less than ``friends''. (Use with caution -- results have not been peer reviewed!}
+  \item{verbose}{Additional stage-by-stage feedback is given if TRUE.}
+  \item{substitute.names}{A k-by-2 matrix with one row containing original node designations and the other containing replacement names}
   \item{...}{Additional options to be passed to electrograph.exam.}
 }
 \details{
@@ -34,6 +38,10 @@ This will be lengthy if the system has a large number of nodes.}
   \item{symmetric}{Is the resulting sociomatrix symmetric?}
 }
 \author{Andrew C. Thomas <act@acthomas.ca>}
+\source{
+Andrew C. Thomas (2010). ``Ohmic Circuit Interpretations of Network
+Distance and Centrality''. Unpublished: available at http://www.acthomas.ca/.
+}
 \examples{
 
 sources <- c(1,2,3,4)

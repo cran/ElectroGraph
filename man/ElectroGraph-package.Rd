@@ -25,11 +25,11 @@ Andrew C. Thomas
 Maintainer: Andrew C. Thomas <act@acthomas.ca>
 }
 \references{
-Andrew C. Thomas (2009) ``Hierarchical Models for Relational Data''.
+Andrew C. Thomas (2009) ``Hierarchical Models for Relational Data''. Unpublished PhD thesis.
 }
 \keyword{ package }
 \examples{
 latt <- cbind(rep(1:5,5),sort(rep(1:5,5)))
-latt.e <- electrograph (make.sociomatrix.from.lattice(latt))
+latt.e <- electrograph (make.sociomatrix.from.lattice(latt)$sociomatrix)
 plot(latt.e)
 }

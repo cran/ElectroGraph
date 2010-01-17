@@ -7,3 +7,7 @@ Current list of improvements to be made:
 -correct dimensions of output to correspond properly. Currently, tick marks on the axes represent comparative distance. (5-25-09)
 
 -replace sociomatrix holdings with sparse-matrix representation, for easier handling of larger numbers of nodes. (5-25-09)
+
+-replace names/IDs as requested.
+
+-add nodes, ties, etc.

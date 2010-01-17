@@ -21,7 +21,7 @@ This function is automatically executed by the electrograph() initialization rou
 \examples{
 
 latt <- cbind(rep(1:5,5),sort(rep(1:5,5)))
-latt.mat <- make.sociomatrix.from.lattice(latt)
+latt.mat <- make.sociomatrix.from.lattice(latt)$sociomatrix
 latt.geo <- geodesic.mat(latt.mat)
 
 }

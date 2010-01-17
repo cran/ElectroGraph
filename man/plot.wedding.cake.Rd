@@ -5,19 +5,17 @@
 Given an electrograph object for a valued relational data set, create a series of plots that illustrate the graph at various threshold levels for tie existence.
 }
 \usage{
-plot.wedding.cake(x, distance.mode="shortest.path", plot.mode="kamada.kawai",
-                              ego.focus=NULL,
-                              
-                              filebase="electrograph", #type="png",
-                              lower.bound=NULL, upper.bound=NULL, main.title=TRUE, 
-										plot.width = 600, plot.height = 600,...) 
+plot.wedding.cake(x, connectivity.mode="sociomatrix", force.mode="fruchterman.reingold",
+                  ego.focus=NULL, filebase="electrograph", #type="png",
+                  lower.bound=NULL, upper.bound=NULL, main.title=TRUE, 
+		  plot.width = 600, plot.height = 600, ...) 
 
 
 }
 \arguments{
   \item{x}{An object of class ``electrograph''.}
-  \item{distance.mode}{Should the projected distances be calculated using the shortest path, or the equivalent conductance of the electro-social approach?}
-  \item{plot.mode}{Which force-directed placement method should be used to find node coordinates?}
+  \item{connectivity.mode}{Should the projected distances be calculated using the shortest path, or the equivalent conductance of the electro-social approach?}
+  \item{force.mode}{Which force-directed placement method should be used to find node coordinates?}
   \item{ego.focus}{A vector of nodes whose importance should be considered highest in the plot.}
   \item{filebase}{An identifier for the series of images produced in the approach.}
   \item{lower.bound, upper.bound}{The minimum and maximum values for an edge to be plotted.}

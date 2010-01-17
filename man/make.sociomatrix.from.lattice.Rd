@@ -19,7 +19,7 @@ make.sociomatrix.from.lattice(pts.nby2)
 \examples{
 # generate a 5-by-5 grid of points.
 pts <- cbind(rep(1:5,5),sort(rep(1:5,5)))
-socio <- make.sociomatrix.from.lattice(pts)
+socio <- make.sociomatrix.from.lattice(pts)$sociomatrix
 
 }
 

@@ -5,24 +5,27 @@
 Given an electrograph object, display a two-dimensional representation.
 }
 \usage{
-\method{plot}{electrograph}(x, distance.mode = c("shortest.path","electro.social"), 
-					plot.mode = c("kamada.kawai", "fruchterman.reingold"), 
-					ego.focus = NULL, manual.coords = NULL, redo.coordinates = FALSE,
-					just.coordinates = FALSE, node.colors = NULL,
-					label.colors = NULL, pts.cex = 1.5, label.cex = 1.5,
-					component.border.col = 8, 
-					edge.thickness = c("standard", "electro.betweenness"), 
-					max.thick = 2,	source.sink.pair = NULL,
-					previous.electrograph.plot.object = NULL, 
-					tick.marks=FALSE,
-					bound.size=1,
-					width.height.factor=1,
-						...)
+\method{plot}{electrograph}(x, connectivity.mode = c("sociomatrix","shortest.path","ohmic","ohmic.socio"), 
+			force.mode = c("fruchterman.reingold", "kamada.kawai"), 
+			ego.focus = NULL, manual.coords = NULL, redo.coordinates = FALSE,
+			just.coordinates = FALSE, node.colors = NULL,
+			label.colors = NULL, pts.cex = 1.5, label.cex = 1.5,
+			component.border.col = 8, 
+			edge.thickness = c("standard", "electro.betweenness"), 
+			max.thick = 2,	source.sink.pair = NULL,
+			previous.electrograph.plot.object = NULL, 
+			tick.marks=FALSE,
+			bound.size=1,
+			width.height.factor=1,
+			verbose = TRUE, 
+			edge.colors.specified = NULL,
+         edge.color.fr.ne.em = c("black", "blue", "red"),
+			...)
 }
 \arguments{
   \item{x}{An object of class ``electrograph''.}
-  \item{distance.mode}{Should the projected distances be calculated using the shortest path, or the equivalent conductance of the electro-social approach?}
-  \item{plot.mode}{Which force-directed placement method should be used to find node coordinates?}
+  \item{connectivity.mode}{Should the projected distances be calculated using the shortest path, or the equivalent conductance of the electro-social approach?}
+  \item{force.mode}{Which force-directed placement method should be used to find node coordinates?}
   \item{ego.focus}{A vector of nodes whose importance should be considered highest in the plot.}
   \item{manual.coords}{If desired, the manual input of coordinates for each node.}
   \item{redo.coordinates}{If true, recalculate the true distances between points using the desired distance method.}
@@ -39,6 +42,9 @@ Given an electrograph object, display a two-dimensional representation.
   \item{tick.marks}{If TRUE, place tick marks at equal distances on each axis.}
   \item{bound.size}{Denotes the degree extra space to surround each component in the plot.}
   \item{width.height.factor}{The desired ratio of width to height in the resulting plot.}
+  \item{verbose}{If TRUE, display additional information while running.}
+  \item{edge.colors.specified}{Set this to an (nodes)-by-(nodes) matrix to have each tie be the desired RGB color.}
+  \item{edge.color.fr.ne.em}{A three-item vector indicating the colors of ``friend'', ``neutral'', or ``enemy'' ties when fidelities are specified.}
   \item{...}{Additional options to pass to ``plot''.}
   
 }

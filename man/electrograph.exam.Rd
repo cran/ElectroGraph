@@ -29,6 +29,6 @@ The original electrograph object, augmented with electro-social quantities:
 \author{Andrew C. Thomas <act@acthomas.ca>}
 \examples{
 latt <- cbind(rep(1:5,5),sort(rep(1:5,5)))
-latt.e <- electrograph (make.sociomatrix.from.lattice(latt), perform.exam=FALSE)
+latt.e <- electrograph (make.sociomatrix.from.lattice(latt)$sociomatrix, ohmic=FALSE)
 latt.exam <- electrograph.exam(latt.e)
 }
