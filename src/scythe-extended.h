@@ -3,6 +3,7 @@
 // January 20, 2009
 
 //#include "scythe-local.h"
+#include <stdint.h>
 #include "scythestat-act/distributions.h" //	Definitions for probability density functions (PDFs), cumulative distribution functions (CDFs), and some common functions (gamma, beta, etc) */
 //#include "scythestat/ide.h" 
 //#include "scythestat/la.h" // manipulations on Scythe Matrix objects
