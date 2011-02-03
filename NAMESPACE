@@ -1,19 +1,37 @@
 useDynLib(ElectroGraph)
-
 export(network.layout,
-			pair.sequence,
-			make.sociomatrix.from.edges,
-			make.sociomatrix.from.lattice,
-			geodesic.mat,
-			network.components,
-			electrograph,
-			get.resistance,
-			compute.volts.asymmetric,
-			compute.volts.symmetric,
-			electrograph.exam,
-			plot.wedding.cake,
-			animate.plot.series,
-			clustering.statistics)
+		pair.sequence,
+		make.sociomatrix.from.edges,
+		make.sociomatrix.from.lattice,
+	#	edge.processor,		sym.test,   ##
+	#	network.components.edges,		network.components.socio,  ##
+		electrograph,
+		get.resistance,
+		ohmic.properties.all,
+		
+	#	twosome.solve.socio,		twosome.solve.edges,	##
+		compute.volts.asymmetric.socio,		compute.volts.asymmetric.edges,
+		compute.volts.symmetric.socio,		compute.volts.symmetric.edges,
+
+	   plot.wedding.cake,
+		animate.plot.series,
+
+		clustering.statistics.socio,	
+		sociomatrix.to.nby3.edges,
+
+		shortest.path.maker,
+		geodesic.mat,
+
+		single.source.betweenness,
+		betweenness.centralities,
+
+		canadian.betweenness.one,
+		canadian.betweenness.source,
+		canadian.betweenness.full
+
+	#	geodesic.mat.socio,		shortest.path.maker.socio,		betweenness.centralities.in.r,  ##
+	#	betweenness.centralities.socio,		single.source.betweenness.socio   ##
+)
 
 S3method(plot,electrograph)
 S3method(print,electrograph)

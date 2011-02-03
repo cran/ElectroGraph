@@ -1,11 +1,11 @@
-\name{clustering.statistics}
-\alias{clustering.statistics}
-\title{clustering.statistics}
+\name{clustering.statistics.socio}
+\alias{clustering.statistics.socio}
+\title{clustering.statistics.socio}
 \description{
 Calculate the transitive counts and cycles in a sociomatrix.
 }
 \usage{
-   clustering.statistics(sociomatrix)
+   clustering.statistics.socio(sociomatrix)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -20,7 +20,7 @@ Calculate the transitive counts and cycles in a sociomatrix.
 # generate a 5-by-5 grid of points.
 pts <- cbind(rep(1:5,5),sort(rep(1:5,5)))
 socio <- make.sociomatrix.from.lattice(pts)
-clustering.statistics(socio$sociomatrix)
+clustering.statistics.socio(socio$sociomatrix)
 
 }
 

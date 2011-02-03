@@ -5,7 +5,7 @@
 Given an electrograph object, display a two-dimensional representation.
 }
 \usage{
-\method{plot}{electrograph}(x, connectivity.mode = c("sociomatrix","shortest.path","ohmic","ohmic.socio"), 
+\method{plot}{electrograph}(x, connectivity.mode = c("visible.ties","shortest.path","ohmic","ohmic.on.ties"), 
 			force.mode = c("fruchterman.reingold", "kamada.kawai"), 
 			ego.focus = NULL, manual.coords = NULL, redo.coordinates = FALSE,
 			just.coordinates = FALSE, node.colors = NULL,

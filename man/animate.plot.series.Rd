@@ -6,13 +6,14 @@ Create a series of plots that animate the transitions between subsequent states 
 }
 \usage{
 animate.plot.series(plots.to.animate, intermediates=10, filebase="electro-animate",
-                                plot.width=600, plot.height=600, ...)
+                                plot.width=600, plot.height=600, verbose= 1, ...)
 }
 \arguments{
   \item{plots.to.animate}{A list of objects of class "electrograph.plot", the output from a plot(electrograph) command.}
   \item{intermediates}{The number of frames to intersperse between source plots.}
   \item{filebase}{The name of the directory into which the output files will be saved.}
   \item{plot.width, plot.height}{The height and width in pixels of the output PNG files.}
+  \item{verbose}{Output additional (diagnostic) information.}
   \item{...}{Additional arguments to pass to ``plot''.}
 }
 \value{

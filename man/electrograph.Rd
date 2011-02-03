@@ -5,14 +5,22 @@
 Given a sociomatrix or an edge list, produce an electrograph object for display and analysis.
 }
 \usage{
-electrograph(input, symmetric=TRUE, solve.for.shortest.paths=TRUE,
-					ohmic.properties=TRUE, fidelities=NULL, 
-					verbose=FALSE, substitute.names=NULL, ...)
+electrograph(input, make.edgelist.symmetric=TRUE,
+             solve.for.shortest.paths=TRUE, solve.for.betweenness=FALSE,
+             solve.for.canadian.betweenness=FALSE,
+	     ohmic.properties=FALSE, fidelities=NULL, 
+	     verbose=FALSE, substitute.names=NULL, ...)
 }
 \arguments{
   \item{input}{A sociomatrix (n-by-n) or edge list (k-by-(2,3,4).}
-  \item{symmetric}{Whether the input edge list should be taken as symmetric.}
-  \item{solve.for.shortest.paths}{If TRUE, calculates the geodesic distances between nodes.}
+  \item{make.edgelist.symmetric}{Whether the input edge list should be taken as symmetric.}
+  \item{solve.for.shortest.paths}{If TRUE, calculates the geodesic
+    distances between nodes.}
+  \item{solve.for.betweenness}{If TRUE, calculates the standard geodesic
+    betweenness centrality for all edges.}
+  \item{solve.for.canadian.betweenness}{If TRUE, calculates the Canadian
+    betweenness centrality for all edges.}
+  
   \item{ohmic.properties}{If TRUE, calculates the Ohmic properties of the network nodes and ties through electrograph.exam. This will be lengthy if the system has a large number of nodes.}
   \item{fidelities}{If set, allows for ties that are perceived to be
     less than ``friends''. (Use with caution -- results have not been peer reviewed!}
@@ -40,7 +48,9 @@ electrograph(input, symmetric=TRUE, solve.for.shortest.paths=TRUE,
 \author{Andrew C. Thomas <act@acthomas.ca>}
 \source{
 Andrew C. Thomas (2010). ``Ohmic Circuit Interpretations of Network
-Distance and Centrality''. Unpublished: available at http://www.acthomas.ca/.
+  Distance and Centrality''. Unpublished: available at
+  http://www.acthomas.ca/.
+Andrew C. Thomas and Stephen E. Fienberg (2011). ``Exploring the Consequences of IED Deployment with a Generalized Linear Model Implementation of the Canadian Traveller Problem''. http://arxiv.org/abs/1012.4185
 }
 \examples{
 

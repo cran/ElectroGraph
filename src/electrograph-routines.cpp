@@ -3,7 +3,7 @@
 # electrograph-routines.cpp 
 #
 # Andrew C. Thomas <act@acthomas.ca>
-# Last modified: January 17, 2010
+# Last modified: January 31, 2011
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
 # Plot functions have been updated for enhanced visualization of weighted 
@@ -763,64 +763,6 @@ extern "C" {
 
 	}
 
-
-	// Floyd-Warshall algorithm.
-	void dijkstra_geodesic_R (double * output, const int * pnn) {
-		int nn = *pnn;
-		int change = 1; 
-		int jj,kk,ll, iter;
-		double val,tt;
-		for (iter=0; iter<nn; iter++) {
-			change = 0;
-			for (kk=0; kk<nn; kk++) for (jj=0; jj<nn; jj++) {
-				val = output[kk+nn*jj];
-				for (ll=0; ll<nn; ll++) {
-					tt = output[kk+nn*ll]+output[ll+nn*jj]; 
-					val = (val<tt?val:tt);
-				}
-				if (val < output[kk+nn*jj]) {
-					change++;
-					output[kk+nn*jj] = val;
-				}
-			}
-			if (!change) break;
-		}
-	}
-
-
-	void clustering_statistics_c (
-		const double * sociomatrix_c,
-		const int * nn_row_c,
-		double * transitives,
-		double * cycles) {
-
-		int nn_row = *nn_row_c;
-		int ii,jj,kk;
-
-		double sum_n, sum_d;		
-
-		//for (kk=0; kk<nn_row; kk++) {transitives[kk]=0;	cycles[kk]=0;}
-		for (kk=0; kk<nn_row; kk++) {
-			sum_n=0; sum_d=0; //cycles.
-			for (ii=0; ii<nn_row; ii++) for (jj=0; jj<nn_row; jj++) {
-				sum_n += (sociomatrix_c[ii+nn_row*jj]*sociomatrix_c[jj+nn_row*kk]*
-								sociomatrix_c[kk+nn_row*ii]);
-				sum_d += (sociomatrix_c[jj+nn_row*kk]*sociomatrix_c[kk+nn_row*ii]);
-			}
-			if (sum_d==0) sum_d = 1;
-			cycles[kk] = sum_n/sum_d;
-
-			sum_n=0; sum_d=0; //transitives.
-			for (ii=0; ii<nn_row; ii++) for (jj=0; jj<nn_row; jj++) {
-				sum_n += (sociomatrix_c[ii+nn_row*jj]*sociomatrix_c[jj+nn_row*kk]*
-								sociomatrix_c[ii+nn_row*kk]);
-				sum_d += (sociomatrix_c[jj+nn_row*kk]*sociomatrix_c[ii+nn_row*kk]);
-			}
-			if (sum_d==0) sum_d = 1;
-			transitives[kk] = sum_n/sum_d;
-		}
-
-	}
 
 
 

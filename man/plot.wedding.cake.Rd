@@ -5,10 +5,10 @@
 Given an electrograph object for a valued relational data set, create a series of plots that illustrate the graph at various threshold levels for tie existence.
 }
 \usage{
-plot.wedding.cake(x, connectivity.mode="sociomatrix", force.mode="fruchterman.reingold",
-                  ego.focus=NULL, filebase="electrograph", #type="png",
+plot.wedding.cake(x, connectivity.mode="visible.ties", force.mode="fruchterman.reingold",
+                  ego.focus=NULL, filebase="electrograph-cake", #type="png",
                   lower.bound=NULL, upper.bound=NULL, main.title=TRUE, 
-		  plot.width = 600, plot.height = 600, ...) 
+		  plot.width = 600, plot.height = 600, verbose = 1, ...) 
 
 
 }
@@ -21,6 +21,7 @@ plot.wedding.cake(x, connectivity.mode="sociomatrix", force.mode="fruchterman.re
   \item{lower.bound, upper.bound}{The minimum and maximum values for an edge to be plotted.}
   \item{main.title}{If true, print the bound values in the title of the plot.}
   \item{plot.width, plot.height}{The height and width in pixels of the output PNG files.}
+  \item{verbose}{Additional output provided.}
   \item{...}{Additional options to pass to ``plot''.}
 }
 \value{
