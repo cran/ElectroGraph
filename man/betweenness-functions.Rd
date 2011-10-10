@@ -1,9 +1,9 @@
 \name{betweenness.centralities}
 \alias{single.source.betweenness}
 \alias{betweenness.centralities}
-\alias{canadian.betweenness.one}
-\alias{canadian.betweenness.source}
-\alias{canadian.betweenness.full}
+\alias{recourse.betweenness.one}
+\alias{recourse.betweenness.source}
+\alias{recourse.betweenness.full}
 \title{Calculating Geodesic Betweenness Properties of a Network}
 \description{
 Functions that
@@ -13,9 +13,9 @@ single.source.betweenness (edgelist, sourcepoint=1, destpoint=NULL, node.ids=NUL
 betweenness.centralities (edgelist,
   path.weight=c("constant","closeness"), verbose=TRUE, node.ids=NULL)
 
-canadian.betweenness.one (edgelist, sourcepoint=1, destpoint=NULL, penalty=20, node.ids=NULL) 
-canadian.betweenness.source (edgelist, sourcepoint=1, penalty=20, node.ids=NULL) 
-canadian.betweenness.full (edgelist, penalty=20, path.weight=c("constant","closeness"), node.ids=NULL) 
+recourse.betweenness.one (edgelist, sourcepoint=1, destpoint=NULL, penalty=20, node.ids=NULL) 
+recourse.betweenness.source (edgelist, sourcepoint=1, penalty=20, node.ids=NULL) 
+recourse.betweenness.full (edgelist, penalty=20, path.weight=c("constant","closeness"), node.ids=NULL) 
 
 }
 \arguments{
@@ -26,7 +26,7 @@ canadian.betweenness.full (edgelist, penalty=20, path.weight=c("constant","close
   \item{sourcepoint}{The number of the source node.}
   \item{destpoint}{The number of the destination node.}
   \item{verbose}{Display additional output if TRUE.}
-  \item{penalty}{The additional cost to be considered in Canadian Betweenness if
+  \item{penalty}{The additional cost to be considered in Recourse Betweenness if
     the route is blocked.}
   \item{path.weight}{Should the betweennesses of edges be calculated with all
     source-sink pairs equal, or weighted inversely by their geodesic
@@ -47,6 +47,6 @@ canadian.betweenness.full (edgelist, penalty=20, path.weight=c("constant","close
   single.source.betweenness (edgelist)
   betweenness.centralities (edgelist, path.weight="constant")
 
-  canadian.betweenness.full (edgelist)
+  recourse.betweenness.full (edgelist)
 }
 

@@ -1,14 +1,20 @@
 useDynLib(ElectroGraph)
-export(network.layout,
+export(network.projection,
 		pair.sequence,
+
 		make.sociomatrix.from.edges,
 		make.sociomatrix.from.lattice,
+
 	#	edge.processor,		sym.test,   ##
 	#	network.components.edges,		network.components.socio,  ##
+
 		electrograph,
 		get.resistance,
-		ohmic.properties.all,
-		
+		ohmic.properties,
+		add.shortest.paths,
+		add.betweenness,
+		add.recourse.betweenness,
+
 	#	twosome.solve.socio,		twosome.solve.edges,	##
 		compute.volts.asymmetric.socio,		compute.volts.asymmetric.edges,
 		compute.volts.symmetric.socio,		compute.volts.symmetric.edges,
@@ -25,9 +31,9 @@ export(network.layout,
 		single.source.betweenness,
 		betweenness.centralities,
 
-		canadian.betweenness.one,
-		canadian.betweenness.source,
-		canadian.betweenness.full
+		recourse.betweenness.one,
+		recourse.betweenness.source,
+		recourse.betweenness.full
 
 	#	geodesic.mat.socio,		shortest.path.maker.socio,		betweenness.centralities.in.r,  ##
 	#	betweenness.centralities.socio,		single.source.betweenness.socio   ##

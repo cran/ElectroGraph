@@ -5,11 +5,15 @@
 Given an edge list, with or without values, produce the corresponding sociomatrix.
 }
 \usage{
-make.sociomatrix.from.edges(inputmat, symmetric=FALSE, fidelities=NULL)
+make.sociomatrix.from.edges(inputmat, size=NULL, symmetric=FALSE, fidelities=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{inputmat}{A matrix with dimension n-by-(2,3,4); see below for details.}
+  \item{inputmat}{A matrix with dimension n-by-(2,3,4); see below for
+    details.}
+  \item{size}{If non-null, specifies the number of nodes that should be
+    in the resulting sociomatrix and implies that existing node labels
+    are integers from 1 to size.}
   \item{symmetric}{If TRUE, creates a symmetric sociomatrix with undirected edges.}
   \item{fidelities}{If set, allows for ties that are perceived to be
     less than ``friends''. (Use with caution -- results have not been peer reviewed!}

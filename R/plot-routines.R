@@ -20,17 +20,38 @@ make.edge.colors <- function (relative.thickness,
   #relative.thickness = c(1,1,0.5,0.5); fractional=c(1,0.2,-0.2,-1); edge.color.fr.ne.em=c("black","blue","red")
   #if all were perfect:
   edge.fracs <- col2rgb(edge.color.fr.ne.em)
-  cols <- sapply(1:length(fractional), FUN=function(kk) {
-    c1 <- (fractional[kk]*edge.fracs[,1]+(1-fractional[kk])*edge.fracs[,2])*(fractional[kk]>0) +
-      (abs(fractional[kk])*edge.fracs[,3]+(1-abs(fractional[kk]))*edge.fracs[,2])*(fractional[kk]<=0)
-    c2 <- (255-(255-c1)*relative.thickness[kk])/255
-    return(rgb(c2[1],c2[2],c2[3]))
-  })
-
+  if (any(fractional != 1)) {
+    rrggbb <- sapply(1:3, FUN=function(kk) {
+      (fractional*edge.fracs[kk,1]+(1-fractional)*edge.fracs[kk,2])*
+        (fractional>0) +
+          (abs(fractional)*edge.fracs[kk,3]+(1-abs(fractional))*edge.fracs[kk,2])*
+            (fractional<=0)
+    })
+    rrggbb <- (255-(255-rrggbb)*rep(relative.thickness,3))/255
+    cols <- rgb(rrggbb[,1], rrggbb[,2], rrggbb[,3])
+    #cols <- sapply(1:length(fractional), FUN=function(kk) {
+    #  c1 <- (fractional[kk]*edge.fracs[,1]+(1-fractional[kk])*edge.fracs[,2])*
+    #    (fractional[kk]>0) +
+    #      (abs(fractional[kk])*edge.fracs[,3]+(1-abs(fractional[kk]))*edge.fracs[,2])*
+    #        (fractional[kk]<=0)
+    #  c2 <- (255-(255-c1)*relative.thickness[kk])/255
+    #  return(rgb(c2[1],c2[2],c2[3]))
+    #})
+  } else {
+    cols <- rgb(1-relative.thickness, 1-relative.thickness, 1-relative.thickness)
+  }
   return(cols) 
 
 }
-  
+
+
+distance.matrix <- function(coordinates) {
+  dist.one <- array(0, rep(dim(coordinates)[1],2))
+  for (kk in 1:dim(coordinates)[2]) dist.one <- dist.one + outer(coordinates[,kk], coordinates[,kk], "-")^2
+  return(sqrt(dist.one))
+}
+
+
 total.distance <- function(cc1,cc2) sum(sqrt(apply((cc1-cc2)^2,1,sum)))
 
 coordinate.match <- function(cc.move, cc.stat, verbose=1) {
@@ -85,15 +106,17 @@ coordinate.match <- function(cc.move, cc.stat, verbose=1) {
 
 
 
-network.layout <- function(connectivity, 
+network.projection <- function(connectivity, 
                            force.mode=c("fruchterman.reingold","kamada.kawai"),
                            layout.dimension=2,
                            ego.focus=NULL,
                            initial.coordinates=NULL,
-                           verbose=TRUE) {
+                           verbose=1,
+                           projection.iterations=5000) {
+  #force.mode="fruchterman.reingold"; layout.dimension=2; ego.focus=NULL; initial.coordinates=NULL; verbose=1; niter=500
+
   
-  niter <- 500
-  force.modes <- c("fruchterman.reingold","kamada.kawai")
+  force.modes <- c("fruchterman.reingold", "kamada.kawai")
   force.mode <- force.mode[1]; if (!any(force.mode==force.modes))
     stop (paste("Unknown force-directed placement mode:",force.mode))
 
@@ -109,13 +132,16 @@ network.layout <- function(connectivity,
   
   cent.meas <- apply(connectivity,1,sum)
   cent.meas <- cent.meas-0.99*min(cent.meas)
-  cent.meas <- cent.meas/max(cent.meas) * (nn/2)
+  cent.meas <- cent.meas/max(cent.meas) * 2/nn
+  if (verbose) print(head(cent.meas))
 
   #currently not in use.
   egocenters <- rep(1,nn)
   if (!is.null(ego.focus)) egocenters[ego.focus] <- nn^(1/length(ego.focus))
+
   
-  coords <- array(rnorm(layout.dimension*nn,0,cent.meas/2),c(nn,layout.dimension))
+  coords <- array(rnorm(layout.dimension*nn, 0, sqrt(nn)),
+                  c(nn,layout.dimension))
 
   #match row names in initial.coordinates to sociomatrix. For better or worse.
   if (!is.null(initial.coordinates)) {
@@ -126,34 +152,39 @@ network.layout <- function(connectivity,
     rows <- rownames(initial.coordinates)[!is.na(row.match)]
     coords[row.match[!is.na(row.match)],] <- initial.coordinates[rows,]
 
-    if (sum(!is.na(row.match))==0) stop ("No coordinates were matched for initial locations. Check row names for initial.coordinates.")
-    if (sum(!is.na(row.match))< dim(initial.coordinates)[1]) warning ("Not all coordinates were matched for initial locations.")
+    if (sum(!is.na(row.match))==0)
+      stop ("No coordinates were matched for initial locations. Check row names for initial.coordinates.")
+    if (sum(!is.na(row.match))< dim(initial.coordinates)[1])
+      warning ("Not all coordinates were matched for initial locations.")
   }
   rownames(coords) <- rownames(connectivity)
   force.energy.mode <- 1*(force.mode=="fruchterman.reingold")
 
-  if (verbose) {
-    writeLines("Connectivity matrix:"); print(connectivity[1,])
-    writeLines("nn, niter:"); print(c(nn, niter))
+  if (verbose>1) {
+    #writeLines("Connectivity matrix:"); print(connectivity[1,])
+    writeLines("nn, iterations:"); print(c(nn, projection.iterations))
     writeLines("egocenters:"); print(egocenters[1])
     writeLines("dimension:"); print(layout.dimension)
     writeLines("force-energy mode:"); print(force.energy.mode)
     writeLines("coords:"); print(coords[1,])
   }
 
-  pos <- .C("network_layout_by_connectivity",
+  pos <- .C("network_projection_by_connectivity",
             connectivity=as.double(connectivity),
             nn=as.integer(nn),
-            niter=as.integer(niter),
+            niter=as.integer(projection.iterations),
             layout.d=as.integer(layout.dimension),
             frucht=as.integer(force.energy.mode),
             egocenters=as.double(egocenters),
+            #mincloseness=as.double(0.199),
             coords=as.double(coords),
-            verbose=as.integer(1*verbose))
-  
+            verbose=as.integer(1*verbose),
+            trialcount=as.integer(0))
+
+  if (verbose) message(paste("Iterations:",projection.iterations - pos$trialcount))
   coords <- array(pos$coords,c(nn,layout.dimension))
   
-  coords <- rotate.adapt(coords)
+  coords <- rotate.adapt(coords, verbose=verbose)
   rownames(coords) <- rownames(connectivity)
 
   
@@ -184,7 +215,7 @@ maxrotate <- function(block,tries=16) {
 
 
 rotate.adapt <- function(coords,first.point=pi, verbose=1) {
-  if (verbose) writeLines(paste(coords[1:2]))
+  if (verbose>1) writeLines(paste(coords[1:2]))
   if (dim(coords)[2] == 2) {
     coords <- t(t(coords)-apply(coords,2,mean))
     
@@ -348,8 +379,13 @@ block.layout <- function(listcoords, bound.factor=1, width.height.factor=1) {
 plot.electrograph.core <- function(all.coords, sociomatrix=NULL, fidelity.matrix=NULL,
                                    line.thickness=NULL, new.coord.hold=NULL,
                                    line.colors=NULL,
-                                   node.colors=NULL, label.colors=NULL, pts.cex=1.5, 
-                                   label.cex=1.5, component.border.col=8,
+                                   node.colors=NULL,
+                                   label.colors=NULL,
+
+                                   node.cex=1.5, 
+                                   label.cex=1.5,
+                                   component.border.col=8,
+                                   
                                    edges.relative.to.minimum=FALSE,
                                    source.sink.pair=NULL,
 
@@ -358,8 +394,12 @@ plot.electrograph.core <- function(all.coords, sociomatrix=NULL, fidelity.matrix
 #                                  edge.colors.specified=NULL,
                                    edge.color.fr.ne.em=NULL,
                                    verbose=1,
+                                   set.margins=TRUE,
                                    
                                    ...) {
+  
+  if (verbose>1) message(paste("Start"))#, paste(proc.time(), collapse="   ")))
+
   if (is.null(sociomatrix)) sociomatrix <- array(0,rep(dim(all.coords)[1],2))
   #node.colors=NULL; label.colors=NULL; pts.cex=1.5; label.cex=1.5; component.border.col=5;
   arrowheads <- !is.null(source.sink.pair)
@@ -373,11 +413,12 @@ plot.electrograph.core <- function(all.coords, sociomatrix=NULL, fidelity.matrix
   }
   
   if (verbose>1) print(paste("line.thickness max: ",max(line.thickness)))
+  if (verbose>1) message(paste("Thick"))#, paste(proc.time(), collapse="   ")))
 
   #redefine max.x, max.y based on blocks
   
   
-  par(mar=c(1, 1, 1, 0.5))
+  if (set.margins) par(mar=c(1, 1, 1, 0.5))
   
   
   #print outline blocks.
@@ -398,6 +439,7 @@ plot.electrograph.core <- function(all.coords, sociomatrix=NULL, fidelity.matrix
     if (is.null(max.x)) max.x <- max(all.coords[,1])*1.05
     if (is.null(max.y)) max.y <- max(all.coords[,2])*1.05
   }
+  if (verbose>1) message(paste("Thick1"))#, paste(proc.time(), collapse="   ")))
 
   plot(c(0,max.x), c(0,max.y), ty="n",axes=FALSE,xlab="",ylab="")#,...)
 
@@ -410,10 +452,10 @@ plot.electrograph.core <- function(all.coords, sociomatrix=NULL, fidelity.matrix
   pts.array <- cbind(rep(1:n.pts,n.pts),sort(rep(1:n.pts,n.pts)))
 
   vals <- abs(as.vector(line.thickness)) #/max(relative.thickness))
+  if (verbose>1) message(paste("Thick2"))#, paste(proc.time(), collapse="   ")))
 
   if (is.null(line.colors)) {
-    line.colors <- make.edge.colors(line.thickness/max(line.thickness), fidelity.matrix,
-                                    edge.color.fr.ne.em)
+    line.colors <- make.edge.colors(line.thickness/max(line.thickness), fidelity.matrix, edge.color.fr.ne.em)
     #if (is.null(fractional.current)) {
     #  line.colors <- rgb((1-as.vector(fidelity))/2,0,0)
     #} else {
@@ -429,7 +471,8 @@ plot.electrograph.core <- function(all.coords, sociomatrix=NULL, fidelity.matrix
     
     if (edges.relative.to.minimum & min.v<max.v) vals <- (vals-min.v)*(vals>=min.v)/(max.v-min.v)*9/10+1/10*(vals != 0)
   }
-    
+  if (verbose>1) message(paste("Thick3"))#, paste(proc.time(), collapse="   ")))
+
   if (max(abs(vals))>0) { #make sure the resulting graph isn't empty.
     vals <- vals/max(abs(vals))
     pts.array <- pts.array[order(vals),]
@@ -457,6 +500,7 @@ plot.electrograph.core <- function(all.coords, sociomatrix=NULL, fidelity.matrix
                            col=line.colors[picks]) #shades(vals[picks],signs[picks]))
     
   }
+  if (verbose>1) message(paste("Thick4"))#, paste(proc.time(), collapse="   ")))
 
   #tick marks.
   if (tick.marks) {
@@ -468,52 +512,56 @@ plot.electrograph.core <- function(all.coords, sociomatrix=NULL, fidelity.matrix
     for (kk in 1:length(y.seq)) lines(interval*c(-1,1)/20,rep(y.seq[kk],2))
   }
   
-  if (is.null(node.colors)) node.colors <- rep(5,n.pts)
-  if (is.null(label.colors)) label.colors <- rep(2,n.pts)
+  if (is.null(node.colors)) node.colors <- rep(4,n.pts)
+  if (is.null(label.colors)) label.colors <- rep(1,n.pts)
   
-  points (all.coords[,1],all.coords[,2],col=node.colors,pch=19,cex=pts.cex)
+  points (all.coords[,1],all.coords[,2],col=node.colors,pch=19, cex=node.cex)
   text (all.coords[,1],all.coords[,2],rownames(all.coords),col=label.colors,cex=label.cex)
 
 }
 
-plot.electrograph <- function(x, connectivity.mode=c("visible.ties", "shortest.path", "ohmic", "ohmic.on.ties"),
-                              force.mode=c("fruchterman.reingold", "kamada.kawai"),
-                              ego.focus=NULL, manual.coords=NULL,
-                              redo.coordinates=FALSE,
-                              just.coordinates=FALSE,
-                              
-                              node.colors=NULL, label.colors=NULL, pts.cex=1.5, 
-                              label.cex=1.5, component.border.col=8,
+plot.electrograph <-
+  function(x, connectivity.mode=c("visible.ties", "shortest.path",
+                "ohmic", "ohmic.on.ties"),
+           force.mode=c("fruchterman.reingold", "kamada.kawai"),
+           ego.focus=NULL, manual.coords=NULL,
+           redo.coordinates=FALSE,
+           just.coordinates=FALSE,
+           
+           node.colors=NULL, label.colors=NULL, node.cex=1.5, 
+           label.cex=1.5, component.border.col=8,
 
-                              edge.thickness=c("standard", "electro.betweenness"),
-                              max.thick=2,
-                              source.sink.pair=NULL,
-                              previous.electrograph.plot.object=NULL,
+           edge.thickness=c("standard", "geodesic.betweenness", "ohmic.betweenness"),
+           max.thick=2,
+           source.sink.pair=NULL,
+           previous.electrograph.plot.object=NULL,
 
-                              tick.marks=FALSE,
-                              bound.size=1,
-                              width.height.factor=1,
-                              verbose=TRUE,
-                              edge.colors.specified=NULL,
-                              edge.color.fr.ne.em=c("black","blue","red"),
-                              
-                              ...) {
+           tick.marks=FALSE,
+           bound.size=1,
+           width.height.factor=1,
+           edge.colors.specified=NULL,
+           edge.color.fr.ne.em=c("black","blue","red"),
+           
+           verbose=0,
 
-  #connectivity.mode="visible.ties"; force.mode="fruchterman.reingold"; ego.focus=NULL; manual.coords=NULL; redo.coordinates=FALSE; just.coordinates=FALSE; max.thick=2; node.colors=NULL; label.colors=NULL; pts.cex=1.5; label.cex=1.5; component.border.col=5; bound.size=1;  width.height.factor=1;  tick.marks=FALSE; previous.electrograph.plot.object=NULL; edge.thickness=c("standard","electro.betweenness")
-  
+           ...) {
+
+  #connectivity.mode="ohmic"; force.mode="fruchterman.reingold"; ego.focus=NULL; manual.coords=NULL; redo.coordinates=FALSE; just.coordinates=FALSE; max.thick=2; node.colors=NULL; label.colors=NULL; node.cex=1.5; label.cex=1.5; component.border.col=5; bound.size=1;  width.height.factor=1;  tick.marks=FALSE; previous.electrograph.plot.object=NULL; edge.thickness=c("standard", "geodesic.betweenness", "ohmic.betweenness"); source.sink.pair=NULL; verbose=2; edge.colors.specified=NULL; edge.color.fr.ne.em=c("black","blue","red"); x=moxie
+
+  #if (verbose>1) paste(proc.time(), collapse="   ")
   if (class(x)!="electrograph")
     stop("plot.electrograph has (somehow) been given an object of incorrect class.")
 
   force.modes <- c("fruchterman.reingold", "kamada.kawai")
   connectivity.modes <- c("visible.ties", "shortest.path", "ohmic", "ohmic.on.ties")
-  edge.thicknesses <- c("standard", "electro.betweenness")
-  if (!is.null(source.sink.pair)) edge.thickness <- "electro.betweenness"
+  edge.thicknesses <- c("standard", "geodesic.betweenness", "ohmic.betweenness")
+  if (!is.null(source.sink.pair)) edge.thickness <- "ohmic.betweenness"
   
   force.mode <- force.mode[1]; if (!any(force.mode==force.modes))
-    stop (paste("Unknown force-directed placement mode:",force.mode))
+    stop (paste("Unknown force-directed placement mode:", force.mode))
   if (verbose) message(paste("Force mode:",force.mode))
   connectivity.mode <- connectivity.mode[1]; if (!any(connectivity.mode==connectivity.modes))
-    stop ("Unknown plot distance type.")
+    stop (paste("Unknown plot distance type. plot.electrograph accepts", connectivity.modes, collapse="; "))
   if (verbose) message(paste("Distance mode:",connectivity.mode))
   edge.thickness <- edge.thickness[1]; if (!any(edge.thickness==edge.thicknesses))
     stop (paste("Unknown edge-thickness mode: ", edge.thickness))
@@ -533,14 +581,14 @@ plot.electrograph <- function(x, connectivity.mode=c("visible.ties", "shortest.p
   }
 
 
-  grand.stuff <- make.sociomatrix.from.edges (x$nby3, fidelities=x$fidel)
+  grand.stuff <- make.sociomatrix.from.edges (x$nby3, size=length(x$node.ids), fidelities=x$fidel)
   grand.socio <- grand.stuff$socio; grand.fidel <- grand.stuff$fidel
   
   #if (verbose>1) message("plot.e 1")
   #fractional.current <- NULL
 
   
-  if (edge.thickness=="electro.betweenness") {
+  if (edge.thickness=="ohmic.betweenness") {
     if (!is.null(source.sink.pair)) {
       if (length(source.sink.pair)!=2) stop("Source-sink pair for edge thickness is not of length 2.") else {
 #        if (verbose>1) message("In electro-betweenness thickness routine.")
@@ -570,9 +618,9 @@ plot.electrograph <- function(x, connectivity.mode=c("visible.ties", "shortest.p
             make.edge.colors(relative.thickness/max(relative.thickness), frenem, edge.color.fr.ne.em)  
       }
     } else {
-      if (is.null(x$avg.current.black.p)) x <- ohmic.properties.all(x)
-      relative.thickness <- x$avg.current.black.p+x$avg.current.red.p+t(x$avg.current.black.p)+t(x$avg.current.red.p)
-      frenem <- (x$avg.current.black.p+t(x$avg.current.black.p) - x$avg.current.red.p-t(x$avg.current.red.p))/(x$avg.current.black.p+t(x$avg.current.black.p) + x$avg.current.red.p+t(x$avg.current.red.p))
+      if (is.null(x$avg.current.pro.p)) x <- ohmic.properties(x)
+      relative.thickness <- x$avg.current.pro.p+x$avg.current.con.p+t(x$avg.current.pro.p)+t(x$avg.current.con.p)
+      frenem <- (x$avg.current.pro.p+t(x$avg.current.pro.p) - x$avg.current.con.p-t(x$avg.current.con.p))/(x$avg.current.pro.p+t(x$avg.current.pro.p) + x$avg.current.con.p+t(x$avg.current.con.p))
       frenem[is.na(frenem)] <- 0
       
       if (is.null(edge.colors.specified))
@@ -601,10 +649,10 @@ plot.electrograph <- function(x, connectivity.mode=c("visible.ties", "shortest.p
     coords.list[[1]] <- manual.coords
   } else {
   
-    if (connectivity.mode == "ohmic" | connectivity.mode == "ohmic.socio") {
+    if (connectivity.mode == "ohmic" | connectivity.mode == "ohmic.on.ties") {
       if (is.null(x$ohmic.distance.mat) | redo.coordinates) {
         message ("Obtaining Ohmic distances.")
-        x <- ohmic.properties.all(x)
+        x <- ohmic.properties(x)
       }
       grand.connectivity <- 1/x$ohmic.distance.mat
       if (connectivity.mode == "ohmic.on.ties")  grand.connectivity <- grand.connectivity*(grand.socio>0)
@@ -618,25 +666,23 @@ plot.electrograph <- function(x, connectivity.mode=c("visible.ties", "shortest.p
       grand.connectivity <- grand.socio
     }
 
-
     
-    if (verbose>1) message(paste("grand.connectivity dims: ", dim(grand.connectivity)[1], dim(grand.connectivity)[2]))
-
-
+    
+    if (verbose>1) message(paste("grand.connectivity dims: "))#, dim(grand.connectivity)[1], dim(grand.connectivity)[2], paste(proc.time(), collapse="   ")))
 
     
     for (kk in 1:subsets) if (sum(x$component.vector==kk)>1) {
-   #   if (verbose>1) message(paste("subset",kk))
+      if (verbose>1) message(paste("subset",kk, paste(proc.time(), collapse="   ")))
 
       little.connectivity <- grand.connectivity[which(x$component.vector==kk), which(x$component.vector==kk)]
       if (!is.null(previous.electrograph.plot.object)) {
         last.coords <- previous.electrograph.plot.object$coordinates
       } else last.coords <- NULL
 
-      if (verbose>1) print(little.connectivity)
+      #if (verbose>1) print(little.connectivity)
       
       #writeLines(paste("Verbose:", print(verbose)))
-      t.coords <- network.layout(little.connectivity,
+      t.coords <- network.projection(little.connectivity,
                                  force.mode,
                                  ego.focus=ego.focus,
                                  initial.coordinates=last.coords,
@@ -651,6 +697,7 @@ plot.electrograph <- function(x, connectivity.mode=c("visible.ties", "shortest.p
     }
 
   }
+  if (verbose>1) message(paste("Finished layouts."))#, paste(proc.time(), collapse="   ")))
 
 
   
@@ -673,7 +720,7 @@ plot.electrograph <- function(x, connectivity.mode=c("visible.ties", "shortest.p
 
               node.colors=node.colors,
               label.colors=label.colors,
-              pts.cex=pts.cex, 
+              node.cex=node.cex, 
               label.cex=label.cex,
               component.border.col=component.border.col,
               source.sink.pair=source.sink.pair,
@@ -692,9 +739,12 @@ plot.electrograph <- function(x, connectivity.mode=c("visible.ties", "shortest.p
   class(out) <- "electrograph.plot"            
 
   if (verbose) message("Finished plot.electrograph preparatory steps.")
-  
+  #if (verbose>1) message(paste(proc.time(), collapse="   "))
+
   if (!just.coordinates)
-    plot(out, sociomatrix=sociomatrix, ...)
+    plot(out, sociomatrix=sociomatrix, verbose=verbose, ...)
+
+  if (verbose>1) message(paste("Finished"))#, paste(proc.time(), collapse="   ")))
   
   return(invisible(out))
   
@@ -703,13 +753,16 @@ plot.electrograph <- function(x, connectivity.mode=c("visible.ties", "shortest.p
 
 
 #the natural move here: make "plot.electrograph.plot", which just takes an electrograph.plot object and sends it to electrograph.core.
-plot.electrograph.plot <- function(x, sociomatrix=NULL, edgelist=NULL, ...) {
+#build in overrides.
+plot.electrograph.plot <- function(x, sociomatrix=NULL, edgelist=NULL, verbose=1, ...) {
 
+  #Add options.
   #if (class(x)!="electrograph.plot") stop ("Object should be of class electrograph.plot.")
   if (is.null(sociomatrix)) {
     sociomatrix <- x$sociomatrix.hold
   }
   if (!is.null(edgelist)) {
+    if (verbose) message ("electrograph.plot: Making sociomatrix.")
     socio.hold <- make.sociomatrix.from.edges(edgelist)
     sociomatrix <- socio.hold$sociomatrix
   }
@@ -718,13 +771,14 @@ plot.electrograph.plot <- function(x, sociomatrix=NULL, edgelist=NULL, ...) {
                           fidelity=x$grand.fidelity,
                           new.coord.hold=x$new.coord.hold,
                           node.colors=x$node.colors, label.colors=x$label.colors,
-                          pts.cex=x$pts.cex, label.cex=x$label.cex,
+                          node.cex=x$node.cex, label.cex=x$label.cex,
                           component.border.col=x$component.border.col,
                           source.sink.pair=x$source.sink.pair,
                           line.thickness=x$line.thickness,
                           tick.marks=x$tick.marks,
                           line.colors=x$edge.colors.specified,
                           edge.color.fr.ne.em=x$edge.color.fr.ne.em,
+                          verbose=verbose,
                           ...)
 
 }
@@ -781,7 +835,7 @@ plot.wedding.cake <- function(x, connectivity.mode="visible.ties",
     socio.hold <- socio.hold*(socio.hold>lower.bound[kk])*(socio.hold<upper.bound[kk])
     isolates <- which(apply(socio.hold,1,sum)==0)
     
-    pts.cex <- rep(1.5, dim(socio.hold)[1]); pts.cex[isolates] <- 0.5
+    node.cex <- rep(1.5, dim(socio.hold)[1]); node.cex[isolates] <- 0.5
     node.colors <- rep(5, dim(socio.hold)[1]); node.colors[isolates] <- 8
     label.cex <- rep(1.5, dim(socio.hold)[1]); label.cex[isolates] <- 1
     label.colors <- rep(2, dim(socio.hold)[1]); label.colors[isolates] <- 1
@@ -797,7 +851,7 @@ plot.wedding.cake <- function(x, connectivity.mode="visible.ties",
     
     plot.electrograph.core (coords, socio.hold,
                             node.colors=node.colors, label.colors=label.colors,
-                            pts.cex=pts.cex, label.cex=label.cex,
+                            node.cex=node.cex, label.cex=label.cex,
                             component.border.col=0,
 
                             edges.relative.to.minimum=TRUE,
@@ -932,8 +986,8 @@ animate.plot.series <- function(plots.to.animate, intermediates=10, filebase="el
 #                             sociomatrix=NULL,
 #                             new.coord.hold=NULL,
 
-                             pts.cex=weights[ww]*plots.to.animate[[kk]]$pts.cex +
-                               (1-weights[ww])*plots.to.animate[[kk+1]]$pts.cex,
+                             node.cex=weights[ww]*plots.to.animate[[kk]]$node.cex +
+                               (1-weights[ww])*plots.to.animate[[kk+1]]$node.cex,
                              label.cex=weights[ww]*plots.to.animate[[kk]]$label.cex +
                                (1-weights[ww])*plots.to.animate[[kk+1]]$label.cex,
                              line.thickness=weights[ww]*plots.to.animate[[kk]]$line.thickness +
@@ -1004,7 +1058,3 @@ animate.plot.series <- function(plots.to.animate, intermediates=10, filebase="el
 #            dimension=as.integer(dim(coords)[2]), nn=as.integer(dim(coords)[1]))
 #  return(res$efk)
 #}
-
-
-
-

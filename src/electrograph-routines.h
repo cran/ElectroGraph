@@ -2,8 +2,8 @@
 #####################################################################
 # electrograph-routines.h 
 #
-# Andrew C. Thomas <acthomas@fas.harvard.edu>
-# Last modified: April 30, 2009
+# Andrew C. Thomas <acthomas@stat.cmu.edu>
+# Last modified: April 19, 2011
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
 # Headers for electrograph-routines.cpp

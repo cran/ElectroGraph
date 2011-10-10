@@ -1,32 +1,50 @@
 \name{electrograph}
 \alias{electrograph}
-\title{electrograph}
+\alias{add.shortest.paths}
+\alias{add.betweenness}
+\alias{add.recourse.betweenness}
+\title{electrograph object manipulation}
 \description{
-Given a sociomatrix or an edge list, produce an electrograph object for display and analysis.
+Given a sociomatrix or an edge list, produce an electrograph object for
+display and analysis. Additional functions augment an electrograph
+object with new analyses.
 }
 \usage{
 electrograph(input, make.edgelist.symmetric=TRUE,
-             solve.for.shortest.paths=TRUE, solve.for.betweenness=FALSE,
-             solve.for.canadian.betweenness=FALSE,
-	     ohmic.properties=FALSE, fidelities=NULL, 
-	     verbose=FALSE, substitute.names=NULL, ...)
+             shortest.paths.get=FALSE,
+             betweenness.get=FALSE,
+             recourse.betweenness.get=FALSE,
+	     ohmic.properties.get=FALSE,
+             fidelities=NULL, 
+	     verbose=FALSE, substitute.names=NULL,
+             missing.numbers.imply.isolates=FALSE, ...)
+add.shortest.paths(e.graph)
+add.betweenness(e.graph)
+add.recourse.betweenness(e.graph)
 }
 \arguments{
   \item{input}{A sociomatrix (n-by-n) or edge list (k-by-(2,3,4).}
   \item{make.edgelist.symmetric}{Whether the input edge list should be taken as symmetric.}
-  \item{solve.for.shortest.paths}{If TRUE, calculates the geodesic
+  \item{shortest.paths.get}{If TRUE, calculates the geodesic
     distances between nodes.}
-  \item{solve.for.betweenness}{If TRUE, calculates the standard geodesic
+  \item{betweenness.get}{If TRUE, calculates the standard geodesic
     betweenness centrality for all edges.}
-  \item{solve.for.canadian.betweenness}{If TRUE, calculates the Canadian
+  \item{recourse.betweenness.get}{If TRUE, calculates the recourse
     betweenness centrality for all edges.}
   
-  \item{ohmic.properties}{If TRUE, calculates the Ohmic properties of the network nodes and ties through electrograph.exam. This will be lengthy if the system has a large number of nodes.}
+  \item{ohmic.properties.get}{If TRUE, calculates the Ohmic properties of the network nodes and ties through electrograph.exam. This will be lengthy if the system has a large number of nodes.}
   \item{fidelities}{If set, allows for ties that are perceived to be
     less than ``friends''. (Use with caution -- results have not been peer reviewed!}
   \item{verbose}{Additional stage-by-stage feedback is given if TRUE.}
-  \item{substitute.names}{A k-by-2 matrix with one row containing original node designations and the other containing replacement names}
-  \item{...}{Additional options to be passed to electrograph.exam.}
+  \item{substitute.names}{A k-by-2 matrix with one row containing
+    original node designations and the other containing replacement names}
+  \item{missing.numbers.imply.isolates}{If TRUE, interprets source-sink
+    labels in the edge list as integer node IDs and adds the appropriate
+    number of isolates.}
+  \item{...}{Additional options to be passed to ohmic.properties.}
+
+  \item{e.graph}{An electrograph object to be augmented with further analysis.}
+
 }
 \details{
   The input object can have one of four forms:

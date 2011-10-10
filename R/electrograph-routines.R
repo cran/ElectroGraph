@@ -1,27 +1,21 @@
-#Ohmic/Electro-social routines for R
-#How we get importance of ties, and to a point individuals,
-#to information communication.
+#electrograph-routines.R -- creating and manipulating an ElectroGraph object.
 #Andrew C. Thomas
 #Last updated: January 30, 2011
 
 
+
 #produces all ordered pairs between 1 and nn.
+#pair.sequence.r <- function(nn) {out <- array(NA,c(choose(nn,2),2)); count <- 0; for (kk in 1:(nn-1)) {out[count+1:(nn-kk),] <- cbind(kk,(kk+1):nn); count <- count+(nn-kk)}; return(out)}
 pair.sequence <- function(nn) {
-  out <- array(NA,c(choose(nn,2),2))
-  count <- 0
-  for (kk in 1:(nn-1)) { 
-    out[count+1:(nn-kk),] <- cbind(kk,(kk+1):nn)
-    count <- count+(nn-kk)
-  }
-  return(out)
+  return(array(.C("pair_sequence_straight", nn=as.integer(nn), pairs=as.integer(rep(0,nn*(nn-1))))$pairs, c(nn*(nn-1)/2,2)))
 }
 
 #is an edge matrix representative of a symmetric system?
 sym.test <- function(nby3) {
   #nby3 = eg$nby3
-  nn <- length(unique(c(nby3[,1:2])))
+  nn <- length(unique(c(nby3[,1], nby3[,2])))
   ee <- dim(nby3)[1]
-  sym <- .C("sym_test", edges=as.integer(nby3[,1:2]),
+  sym <- .C("sym_test", edges=as.integer(c(nby3[,1], nby3[,2])),
             strengths=as.double(nby3[,3]),
             nn=as.integer(nn), ee=as.integer(ee),
             sym=as.integer(0))$sym
@@ -29,7 +23,7 @@ sym.test <- function(nby3) {
 }
 
 #reprocess the edge matrix to the current format.
-edge.processor <- function(inputmat, symmetric, fidelities) {
+edge.processor <- function(inputmat, symmetric, fidelities, missing.numbers.imply.isolates=FALSE) {
   #returns edge values as well.
   
   inputmat <- as.matrix(inputmat)
@@ -48,6 +42,12 @@ edge.processor <- function(inputmat, symmetric, fidelities) {
   }
   
   id.names <- sort(unique(as.vector(inputmat[,1:2])))
+  if (missing.numbers.imply.isolates) {
+    numid <- as.numeric(id.names)
+    if (!any(is.na(numid)) & all(numid==round(numid)))  #no non-numeric names?
+      id.names <- as.character(1:max(numid))
+  }
+  
   nn <- length(id.names)
   cols <- dim(inputmat)[2]
 
@@ -67,7 +67,7 @@ edge.processor <- function(inputmat, symmetric, fidelities) {
     }
   }
   fidelities[which(values<0)] <- -1*fidelities[which(values<0)]
-  values <- abs(values)
+  values <- abs(as.numeric(values))
   nby3 <- cbind(new.pairs, values)
                 
   colnames(nby3) <- c("src","dest","value")
@@ -77,16 +77,28 @@ edge.processor <- function(inputmat, symmetric, fidelities) {
 
 
 
-sociomatrix.to.nby3.edges <- function(sociomatrix) {
+sociomatrix.to.nby3.edges <- function(sociomatrix, keep.labels=FALSE) {
   if (dim(sociomatrix)[1]!=dim(sociomatrix)[2]) stop ("Input sociomatrix is not square.")
   nn <- dim(sociomatrix)[1]
   nonzeros <- which(sociomatrix > 0)
-  return(cbind(floor((nonzeros-1)/nn)+1, (nonzeros-1) %% nn + 1, sociomatrix[nonzeros]))
+  if (keep.labels) {
+    labels <- rownames(sociomatrix)
+    output <- data.frame(send=labels[floor((nonzeros-1)/nn)+1],
+                         rec=labels[(nonzeros-1) %% nn + 1],
+                         val=sociomatrix[nonzeros])
+  } else {
+    output <- data.frame(send=floor((nonzeros-1)/nn)+1,
+                         rec=(nonzeros-1) %% nn + 1,
+                         val=sociomatrix[nonzeros])
+  }
+  
+  return(output)
+#  return(cbind(floor((nonzeros-1)/nn)+1, (nonzeros-1) %% nn + 1, sociomatrix[nonzeros]))
 }
 
 
 #inputs an edgelist, a valued edgelist or a valued dyad list. Outputs the sociomatrix/fidelity matrix.
-make.sociomatrix.from.edges <- function(inputmat, symmetric=FALSE, fidelities=NULL) {
+make.sociomatrix.from.edges <- function(inputmat, size=NULL, symmetric=FALSE, fidelities=NULL) {
   #inputmat=e.graph$nby3[edge.subset,];  fidelities=e.graph$fidelities[edge.subset]; symmetric=FALSE;
   if (dim(inputmat)[2]>4) stop("Incorrect dimensionality for edge matrix.")
   fidelity.dim <- 2-1*(dim(inputmat)[2]<4)
@@ -101,7 +113,7 @@ make.sociomatrix.from.edges <- function(inputmat, symmetric=FALSE, fidelities=NU
   }
   
   inputmat <- as.matrix(inputmat)
-  id.names <- sort(unique(as.vector(inputmat[,1:2])))
+  if (is.null(size)) id.names <- sort(unique(as.vector(inputmat[,1:2]))) else id.names <- 1:size
   rows <- length(id.names)
   cols <- dim(inputmat)[2]
 
@@ -197,9 +209,10 @@ network.components.socio <- function(sociomatrix,
 
 
 network.components.edges <- function(nby3,
+                                     node.count=length(unique(c(nby3[,1:2]))),
                                      minimum.relative.strength.for.tie=1e-8) {
 
-  pointset <- unique(c(nby3[,1:2]))
+  pointset <- 1:node.count #unique(c(nby3[,1:2]))
   maxtie <- max(nby3[,3])
   edgeset <- which(nby3[,3] > minimum.relative.strength.for.tie*maxtie)
   nby3 <- nby3[edgeset,]
@@ -233,17 +246,26 @@ network.components.edges <- function(nby3,
 
 
 #now, edge-dominant version.
-electrograph <- function(input, make.edgelist.symmetric=TRUE, solve.for.shortest.paths=TRUE,
-                         solve.for.betweenness=FALSE, solve.for.canadian.betweenness=FALSE,
-                         ohmic.properties=FALSE, fidelities=NULL, verbose=FALSE,
-                         substitute.names=NULL, ...) {
-  #input=cbind(c("ee","aa","bb","cc","dd"),c("ff","bb","cc","dd","aa")); symmetric=TRUE; solve.for.shortest.paths=TRUE; ohmic.properties=TRUE; fidelities=NULL; verbose=FALSE; substitute.names=NULL
-  
+electrograph <- function(input, make.edgelist.symmetric=TRUE,
+                         shortest.paths.get=FALSE,
+                         betweenness.get=FALSE,
+                         recourse.betweenness.get=FALSE,
+                         ohmic.properties.get=FALSE,
+                         fidelities=NULL,
+                         verbose=FALSE,
+                         substitute.names=NULL,
+                         missing.numbers.imply.isolates=FALSE,
+                         ...) {
+  #input=cbind(c("ee","aa","bb","cc","dd"),c("ff","bb","cc","dd","aa")); ohmic.properties.get=FALSE; fidelities=NULL; verbose=TRUE; substitute.names=NULL; make.edgelist.symmetric=TRUE; input=socio.array
+  #input=cbind(4:11, 11:4); missing.numbers.imply.isolates=TRUE
+  if (verbose) message("Initializing electrograph object.")
   input <- as.matrix(input)
   
   if (dim(input)[1] == dim(input)[2] & is.numeric(input)) {
     #then it's a sociomatrix.
-    nby3 <- sociomatrix.to.nby3.edges(input);  pop.size <- length(unique(c(nby3[,1:2]))) #dim(sociomatrix)[1]
+    if (verbose) message("Adapting sociomatrix.")
+    
+    nby3 <- sociomatrix.to.nby3.edges(input);  pop.size <- length(unique(c(nby3[,1], nby3[,2]))) #dim(sociomatrix)[1]
     if (all(is.null(rownames(input)))) {node.ids <- 1:pop.size} else {node.ids <- rownames(input)}
     
     if (!is.null(fidelities)) {
@@ -251,7 +273,7 @@ electrograph <- function(input, make.edgelist.symmetric=TRUE, solve.for.shortest
       fidelities <- fidelities[which(input != 0)]
     }
   } else {
-    holder <- edge.processor (input, make.edgelist.symmetric, fidelities)
+    holder <- edge.processor (input, make.edgelist.symmetric, fidelities, missing.numbers.imply.isolates)
     nby3 <- holder$nby3;    node.ids <- holder$id.names;
     fidelities <- holder$fidelities
   }
@@ -260,6 +282,8 @@ electrograph <- function(input, make.edgelist.symmetric=TRUE, solve.for.shortest
   if (max(abs(fidelities))>1) stop("At least one fidelity value is outside the range (-1,1).")
   
   #reset symmetric now.
+  #at this point, nby3 should be entirely numeric.
+  nby3 <- as.matrix(nby3); if (!is.numeric(nby3)) stop("ElectroGraph error: processed edge table is non-numeric.")
   symmetric <- sym.test(nby3)
 
   nonnegative <- all(nby3[,3] >= 0)
@@ -279,13 +303,15 @@ electrograph <- function(input, make.edgelist.symmetric=TRUE, solve.for.shortest
   }
 
   #out <- list(components=components, component.vector=component.vector)
-  pieces <- network.components.edges(nby3)
+  pieces <- network.components.edges(nby3, length(node.ids))
   component.vector <- pieces$component.vector; rownames(component.vector) <- node.ids
 
   out <- list(nby3=nby3, fidelities=fidelities,
               component.vector=component.vector,
               symmetric=symmetric,
               node.ids=node.ids)
+  class(out) <- "electrograph"
+  if (verbose) message("Basic loading complete.")
 
   #outputs: nby3 edgelist, fidelities, component.vector, symmetric?, node.ids
 
@@ -301,37 +327,41 @@ electrograph <- function(input, make.edgelist.symmetric=TRUE, solve.for.shortest
   #geodesic=pieces$geodesic, diameters=pieces$diameters,
   #global.pseudo.diameter=pieces$global.pseudo.diameter,
               
-  class(out) <- "electrograph"
 
   #if (verbose) message("Finished electrograph object loading.")
 
-  if (solve.for.shortest.paths) {
+  if (shortest.paths.get) {
     out$geodesic <- geodesic.mat(nby3, node.ids=node.ids)
     if (verbose) message("Finished geodesic path length calculation.")
   }
 
-  if (solve.for.betweenness) {
+  if (betweenness.get) {
     bet.hold <- betweenness.centralities(nby3, node.ids=node.ids)
     out$edge.betweenness <- bet.hold$edgewise
     out$node.betweenness <- bet.hold$nodal
     if (verbose) message("Finished standard betweenness centrality calculation.")
   }
 
-  if (solve.for.canadian.betweenness) {
-    out$canadian.betweenness <- canadian.betweenness.full(nby3)
-    if (verbose) message("Finished Canadian betweenness centrality calculation.")
+  if (recourse.betweenness.get) {
+    out$recourse.betweenness <- recourse.betweenness.full(nby3)
+    if (verbose) message("Finished recourse betweenness centrality calculation.")
   }
   
-  if (ohmic.properties) {
-    out2 <- ohmic.properties.all(out, ...)
-    if (verbose) message("Finished Ohmic properties.")
+  if (ohmic.properties.get) {
+    out <- ohmic.properties(out, ...)
+    if (verbose) message("Finished calculation of Ohmic properties.")
   }
   
   return (out)
 }
 
 
-#gets transitivity/cycles from a 
+add.shortest.paths <- function(e.graph) {e.graph$geodesic <- geodesic.mat(e.graph$nby3, node.ids=e.graph$node.ids); return(e.graph)}
+add.betweenness <- function(e.graph) {bet.hold <- betweenness.centralities(e.graph$nby3, node.ids=e.graph$node.ids); e.graph$edge.betweenness <- bet.hold$edgewise; e.graph$node.betweenness <- bet.hold$nodal; return(e.graph)}
+add.recourse.betweenness <- function(e.graph) {e.graph$recourse.betweenness <- recourse.betweenness.full(e.graph$nby3); return(e.graph)}
+
+
+#gets transitivity/cycles from a sociomatrix.
 clustering.statistics.socio <- function(sociomatrix) {
   nn <- dim(sociomatrix)[1]
   clusts <- .C("clustering_statistics_socio",
@@ -344,7 +374,7 @@ clustering.statistics.socio <- function(sociomatrix) {
   return(out)
 }
 
-
+#based on the current properties of the object, generate as many summary statistics as possible without further analysis.
 summary.electrograph <- function(object, ...) {
   #quantities:
   #node level: electro-distance centrality, standard centrality, average current centrality
@@ -386,8 +416,8 @@ summary.electrograph <- function(object, ...) {
 
   
   
-  if (!is.null(object$distance.mat)) {
-    distance.hold <- 1/object$distance.mat
+  if (!is.null(object$ohmic.distance.mat)) {
+    distance.hold <- 1/object$ohmic.distance.mat
     diag(distance.hold) <- 0
     ohm.close.out <- apply(distance.hold,1,mean)
     ohm.close.in <- apply(distance.hold,2,mean)
@@ -406,10 +436,12 @@ summary.electrograph <- function(object, ...) {
   
 }
 
+
 print.electrograph <- function(x, ...) {
 
   message("Head of edge list nby3:")
-  print(head(x$nby3))
+  hnby3 <- head(x$nby3)
+  print(data.frame(source=x$node.ids[hnby3[,1]], sink=x$node.ids[hnby3[,2]], value=hnby3[,3]))
 
   writeLines(paste("component.vector"))
   print(t(x$component.vector))
@@ -420,9 +452,8 @@ print.electrograph <- function(x, ...) {
   writeLines(paste("Symmetric:",x$symmetric))
 
   if (!is.null(x$source.sink)) {
-    writeLines(paste("source.sink pairs"))
+    writeLines(paste("source.sink pairs for Ohmic calculations"))
     print(t(x$source.sink))
   }
 
 }
-

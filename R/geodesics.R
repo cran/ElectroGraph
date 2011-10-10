@@ -4,7 +4,7 @@
 # Andrew C. Thomas
 # January 19, 2011
 #
-# Edge methods are implemented.
+# Edge-based methods are implemented.
 #
 ##########################################################################
 
@@ -13,6 +13,12 @@ shortest.path.maker <- function(edgelist, sourcepoint=1, destpoint=NULL, node.id
   if (dim(edgelist)[2] != 2 & dim(edgelist)[2] != 3) {
     stop ("edgelist needs to be k-by-2 or k-by-3 in dimension.")
   } else if (dim(edgelist)[2] == 2) edgelist <- cbind(edgelist, 1)
+
+
+  #if the edgelist is unprocessed?
+  edgelist <- as.matrix(edgelist); if (!is.numeric(edgelist)) stop ("shortest.path.maker error: edgelist input must be numeric, and should correspond to the vector (1:n).")
+
+  
   nn <- length(unique(c(edgelist[,1:2])))
   if (is.null(node.ids)) node.ids <- 1:nn else if (length(node.ids)<nn) stop("Length of node.ids does not match number of nodes.")
 
@@ -32,12 +38,17 @@ shortest.path.maker <- function(edgelist, sourcepoint=1, destpoint=NULL, node.id
   return (output)
 }
 
+
 geodesic.mat <- function(edgelist, node.ids=NULL) {
   if (dim(edgelist)[2] != 2 & dim(edgelist)[2] != 3) {
     stop ("edgelist needs to be k-by-2 or k-by-3 in dimension.")
   } else if (dim(edgelist)[2] == 2) edgelist <- cbind(edgelist, 1)
+
+  #if the edgelist is unprocessed?
+  edgelist <- as.matrix(edgelist); if (!is.numeric(edgelist)) stop ("geodesic matrix error: edgelist input must be numeric, and should correspond to the vector (1:n).")
+  
   nn <- max(edgelist[,1:2])
-  if (is.null(node.ids)) node.ids <- 1:nn else if (length(node.ids)<nn) stop("Length of node.ids does not match number of nodes.")
+  if (is.null(node.ids)) node.ids <- 1:nn else if (length(node.ids)<nn) stop("geodesic matrix error: Length of node.ids does not match number of nodes.")
   output <- array(.C("dijkstra_all", edges=as.integer(edgelist[,1:2]-1), strengths=as.double(edgelist[,3]),
              output=as.double(rep(0, nn^2)), nn=as.integer(nn),
              pedges=as.integer(dim(edgelist)[1]))$output, rep(nn,2))
@@ -99,7 +110,7 @@ betweenness.centralities <- function(edgelist, path.weight=c("constant","closene
 }
 
 
-canadian.betweenness.one <- function(edgelist, sourcepoint=1, destpoint=NULL, penalty=20, node.ids=NULL) {
+recourse.betweenness.one <- function(edgelist, sourcepoint=1, destpoint=NULL, penalty=20, node.ids=NULL) {
 
   if (dim(edgelist)[2] != 2 & dim(edgelist)[2] != 3) {
     stop ("edgelist needs to be k-by-2 or k-by-3 in dimension.")
@@ -109,7 +120,7 @@ canadian.betweenness.one <- function(edgelist, sourcepoint=1, destpoint=NULL, pe
   if (is.null(destpoint)) destpoint <- nn
   if (is.null(node.ids)) node.ids <- 1:nn else if (length(node.ids)<nn) stop("Length of node.ids does not match number of nodes.")
   
-  pathcount.proto <- .C("canadian_betweenness_single_sd",
+  pathcount.proto <- .C("recourse_betweenness_single_sd",
                         edges=as.integer(edgelist[,1:2]-1), strength=as.double(abs(edgelist[,3])),
                         output=as.double(rep(0, edgecount)), path.lengths=as.double(rep(0, nn)),
                         
@@ -125,7 +136,7 @@ canadian.betweenness.one <- function(edgelist, sourcepoint=1, destpoint=NULL, pe
 }
 
 
-canadian.betweenness.source <- function(edgelist, sourcepoint=1, penalty=20, node.ids=NULL) {
+recourse.betweenness.source <- function(edgelist, sourcepoint=1, penalty=20, node.ids=NULL) {
 
   if (dim(edgelist)[2] != 2 & dim(edgelist)[2] != 3) {
     stop ("edgelist needs to be k-by-2 or k-by-3 in dimension.")
@@ -135,7 +146,7 @@ canadian.betweenness.source <- function(edgelist, sourcepoint=1, penalty=20, nod
   if (is.null(node.ids)) node.ids <- 1:nn else if (length(node.ids)<nn) stop("Length of node.ids does not match number of nodes.")
   #if (is.null(destpoint)) destpoint <- nn
   
-  pathcount.proto <- .C("canadian_betweenness_one_source", edges=as.integer(edgelist[,1:2]-1),
+  pathcount.proto <- .C("recourse_betweenness_one_source", edges=as.integer(edgelist[,1:2]-1),
                         strength=as.double(abs(edgelist[,3])), output=as.double(rep(0, edgecount*nn)),
                         path.lengths=as.double(rep(0, nn)),
                         dim1=as.integer(nn), edgedim=as.integer(edgecount),
@@ -149,7 +160,7 @@ canadian.betweenness.source <- function(edgelist, sourcepoint=1, penalty=20, nod
   return (pathcount)
 }
 
-canadian.betweenness.full <- function(edgelist, penalty=20, path.weight=c("constant","closeness"), node.ids=NULL) {
+recourse.betweenness.full <- function(edgelist, penalty=20, path.weight=c("constant","closeness"), node.ids=NULL) {
 
   if (dim(edgelist)[2] != 2 & dim(edgelist)[2] != 3) {
     stop ("edgelist needs to be k-by-2 or k-by-3 in dimension.")
@@ -160,7 +171,7 @@ canadian.betweenness.full <- function(edgelist, penalty=20, path.weight=c("const
   if (is.null(node.ids)) node.ids <- 1:nn else if (length(node.ids)<nn) stop("Length of node.ids does not match number of nodes.")
   #if (is.null(destpoint)) destpoint <- nn
   
-  pathcount.proto <- .C("canadian_betweenness_full",
+  pathcount.proto <- .C("recourse_betweenness_full",
                         edges=as.integer(edgelist[,1:2]-1),
                         strength=as.double(abs(edgelist[,3])),
                         output=as.double(rep(0, edgecount)),
@@ -180,6 +191,10 @@ canadian.betweenness.full <- function(edgelist, penalty=20, path.weight=c("const
 }
 
 
+##############################################################################
+#
+# Legacy code.
+#
 ##############################################################################
 
 #now in C! It's actually Floyd-Warshall... with absolute values.

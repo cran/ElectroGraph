@@ -9,17 +9,18 @@ Given an electrograph object, display a two-dimensional representation.
 			force.mode = c("fruchterman.reingold", "kamada.kawai"), 
 			ego.focus = NULL, manual.coords = NULL, redo.coordinates = FALSE,
 			just.coordinates = FALSE, node.colors = NULL,
-			label.colors = NULL, pts.cex = 1.5, label.cex = 1.5,
+			label.colors = NULL, node.cex = 1.5, label.cex = 1.5,
 			component.border.col = 8, 
-			edge.thickness = c("standard", "electro.betweenness"), 
+			edge.thickness = c("standard",
+"geodesic.betweenness", "ohmic.betweenness"), 
 			max.thick = 2,	source.sink.pair = NULL,
 			previous.electrograph.plot.object = NULL, 
 			tick.marks=FALSE,
 			bound.size=1,
 			width.height.factor=1,
-			verbose = TRUE, 
 			edge.colors.specified = NULL,
-         edge.color.fr.ne.em = c("black", "blue", "red"),
+                        edge.color.fr.ne.em = c("black", "blue", "red"),
+			verbose = 0, 
 			...)
 }
 \arguments{
@@ -32,7 +33,7 @@ Given an electrograph object, display a two-dimensional representation.
   \item{just.coordinates}{If true, do not output a plot.}
   \item{node.colors}{The colors of the nodes to be plotted.}
   \item{label.colors}{The colors of node labels.}
-  \item{pts.cex}{Point sizes.}
+  \item{node.cex}{Point sizes.}
   \item{label.cex}{Label sizes.}
   \item{component.border.col}{The color assigned to the boxes separating graph components.}
   \item{edge.thickness}{Determines whether the sociomatrix or electro-social betweenness will determine the thickness of edges in the plot.}

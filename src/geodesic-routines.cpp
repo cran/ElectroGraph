@@ -221,7 +221,7 @@ extern "C" {
 
 
 
-	void canadian_betweenness_single_sd (const int * edges,	double * strengths, 
+	void recourse_betweenness_single_sd (const int * edges,	double * strengths, 
 											double * path_extra, // matrix, ee by 1.
 											double * spdists,
 
@@ -256,7 +256,7 @@ extern "C" {
 	}
 
 
-	void canadian_betweenness_one_source (const int * edges,	double * strengths, 
+	void recourse_betweenness_one_source (const int * edges,	double * strengths, 
 											double * path_extra, // matrix, ee by nn.
 											double * spdists,
 
@@ -295,7 +295,7 @@ extern "C" {
 	}
 
 
-	void canadian_betweenness_full (
+	void recourse_betweenness_full (
 				const int * edges, 	double * strengths, 
 				double * outweight, // ee vector.
 
@@ -320,7 +320,7 @@ extern "C" {
 		//	std::cout << "source: " << sources << std::endl;
 			for (kk=0; kk<nn*ee; kk++) path_extra[kk]=0;
 			for (kk=0; kk<nn; kk++) spdists[kk]=0;
-			canadian_betweenness_one_source (edges, strengths, 
+			recourse_betweenness_one_source (edges, strengths, 
 								path_extra, spdists,	pnn, 
 								pedges,	&sources,	ppenalty); 
 

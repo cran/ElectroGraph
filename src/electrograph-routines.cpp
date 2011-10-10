@@ -52,8 +52,8 @@ void process_for_enemies (
 	Matrix<double> sociomatrix,
 	Matrix<double> fidelities,
 	Matrix<double> voltages,	
-	Matrix<double> & average_current,	
-	Matrix<double> & red_current,
+	Matrix<double> & pro_current,	
+	Matrix<double> & con_current,
 	double & total_conductance_strength, 	
 	double & total_conductance_fidelity 
 ) {
@@ -62,31 +62,31 @@ void process_for_enemies (
 	Matrix<int> t_ord = rev_true_order(voltages);
 	int kk, cc, curr_pick;
 
-	double total_current = sum(average_current(_,t_ord(nn_row-1)));
+	double total_current = sum(pro_current(_,t_ord(nn_row-1)));
 	double av_hl, sd_hl, pos_frac, t_curr;
 	
 	for (kk=0; kk<(nn_row-1); kk++) {
 		curr_pick = t_ord[kk];
 		av_hl = 0; sd_hl = 0; //black current, red current.
 		if (kk>0) for (cc=0; cc<nn_row; cc++) {
-			av_hl += average_current(cc,curr_pick);
-			sd_hl += red_current(cc,curr_pick);
+			av_hl += pro_current(cc,curr_pick);
+			sd_hl += con_current(cc,curr_pick);
 		} else {
 			av_hl = total_current;
 		}
 		if (av_hl+sd_hl>0) {
 			pos_frac = av_hl/(av_hl+sd_hl);
 			for (cc=0; cc<nn_row; cc++) {
-				t_curr = average_current(curr_pick,cc)+red_current(curr_pick,cc); //outbound total.
+				t_curr = pro_current(curr_pick,cc)+con_current(curr_pick,cc); //outbound total.
 
-				average_current(curr_pick,cc) = pos_frac*t_curr*(1+fidelities(curr_pick,cc))/2 + 
+				pro_current(curr_pick,cc) = pos_frac*t_curr*(1+fidelities(curr_pick,cc))/2 + 
 					(1-pos_frac)*t_curr*(1-fidelities(curr_pick,cc))/2;
-				red_current(curr_pick,cc) = pos_frac*t_curr*(1-fidelities(curr_pick,cc))/2 + 
+				con_current(curr_pick,cc) = pos_frac*t_curr*(1-fidelities(curr_pick,cc))/2 + 
 					(1-pos_frac)*t_curr*(1+fidelities(curr_pick,cc))/2;
 
-/*				average_current(curr_pick,cc) = pos_frac*t_curr*(sociomatrix(curr_pick,cc)>0)+
+/*				pro_current(curr_pick,cc) = pos_frac*t_curr*(sociomatrix(curr_pick,cc)>0)+
 					(1-pos_frac)*t_curr*(sociomatrix(curr_pick,cc)<0);
-				red_current(curr_pick,cc) = pos_frac*t_curr*(sociomatrix(curr_pick,cc)<0)+
+				con_current(curr_pick,cc) = pos_frac*t_curr*(sociomatrix(curr_pick,cc)<0)+
 					(1-pos_frac)*t_curr*(sociomatrix(curr_pick,cc)>0);  */
 				
 
@@ -97,8 +97,8 @@ void process_for_enemies (
 	curr_pick = t_ord[nn_row-1];
 	av_hl = 0; sd_hl = 0;
 	for (cc=0; cc<nn_row; cc++) {
-		av_hl += average_current(cc,curr_pick);
-		sd_hl += red_current(cc,curr_pick);
+		av_hl += pro_current(cc,curr_pick);
+		sd_hl += con_current(cc,curr_pick);
 	}	
 	total_conductance_strength = av_hl+sd_hl;
 	total_conductance_fidelity = (av_hl-sd_hl)/(av_hl+sd_hl); //1 to -1.
@@ -110,8 +110,8 @@ extern "C" {
 		const double * sociomatrix_c,
 		const double * fidelities_c,
 		const double * voltages_c,
-		double * average_current_c,
-		double * red_current_c,
+		double * pro_current_c,
+		double * con_current_c,
 		double * total_conductance_strength_c,
 		double * total_conductance_fidelity_c,
 
@@ -122,24 +122,24 @@ extern "C" {
 		Matrix<double> sociomatrix(nn,nn,sociomatrix_c);
 		Matrix<double> fidelities(nn,nn,fidelities_c);
 		Matrix<double> voltages(nn,1,voltages_c);
-		Matrix<double> average_current(nn,nn,1,0);
-		Matrix<double> red_current(nn,nn,1,0);
+		Matrix<double> pro_current(nn,nn,1,0);
+		Matrix<double> con_current(nn,nn,1,0);
 		double total_conductance_strength = * total_conductance_strength_c;
 		double total_conductance_fidelity = * total_conductance_fidelity_c;
 
 		for (jj=0; jj<nn; jj++) for (kk=0; kk<nn; kk++) {
-			average_current(jj,kk) = (voltages(jj)-voltages(kk))*(voltages(jj)>voltages(kk))*abs(sociomatrix(jj,kk));
+			pro_current(jj,kk) = (voltages(jj)-voltages(kk))*(voltages(jj)>voltages(kk))*abs(sociomatrix(jj,kk));
 		}
 
 		process_for_enemies(sociomatrix,	fidelities,	voltages, 
-									average_current,	red_current, 
+									pro_current,	con_current, 
 									total_conductance_strength, total_conductance_fidelity);
 
 		*total_conductance_strength_c = total_conductance_strength;
 		*total_conductance_fidelity_c = total_conductance_fidelity;
 		for (jj=0; jj<nn*nn; jj++) {
-			average_current_c[jj] = average_current(jj);
-			red_current_c[jj] = red_current(jj);
+			pro_current_c[jj] = pro_current(jj);
+			con_current_c[jj] = con_current(jj);
 		}
 
 	}
@@ -149,12 +149,12 @@ extern "C" {
 
 
 void process_without_enemies (
-	Matrix<double> & average_current,	int snk, 
+	Matrix<double> & pro_current,	int snk, 
 	double & total_conductance_strength, 	double & total_conductance_fidelity 
 ) {
 	double av_hl = 0; int cc;
-	for (cc=0; cc<average_current.rows(); cc++) {
-		av_hl += average_current(cc,snk);
+	for (cc=0; cc<pro_current.rows(); cc++) {
+		av_hl += pro_current(cc,snk);
 	}	
 	if (debug_mode > 2) std::cout << "wo " << snk << ":" << av_hl << std::endl;
 	total_conductance_strength = av_hl;
@@ -170,8 +170,8 @@ void solve_votes_symmetric (
 	double & equiv_resist,	double & fidelity,
 	Matrix<double> & voltages,	Matrix<double> & currents, //both clean.
 	Matrix<double> & holder, //(nn_row-2,nn_row-2,1,0);
-	Matrix<double> & average_current,
-	Matrix<double> & red_current
+	Matrix<double> & pro_current,
+	Matrix<double> & con_current
 ) {
 	
 	//if (debug_mode) std::cout << "in svs" << std::endl;
@@ -217,10 +217,10 @@ void solve_votes_symmetric (
 	for (jj=0; jj<nn_row; jj++) {
 		running_sum = 0;
 		for (kk = 0; kk<nn_row; kk++) {
-			average_current(jj,kk) = (voltages(jj)-voltages(kk))*(voltages(jj)>voltages(kk))*sociomatrix(jj,kk);
-			red_current(jj,kk) = 0;
+			pro_current(jj,kk) = (voltages(jj)-voltages(kk))*(voltages(jj)>voltages(kk))*sociomatrix(jj,kk);
+			con_current(jj,kk) = 0;
 
-			running_sum += average_current(jj,kk);
+			running_sum += pro_current(jj,kk);
 			enemies += 1*(fidelities(jj,kk)<1); 
 		}
 		currents(jj) = running_sum;
@@ -228,10 +228,10 @@ void solve_votes_symmetric (
 
 	if (enemies) {
 		process_for_enemies (sociomatrix, fidelities, 
-						voltages, average_current,
-						red_current, total_conductance, fidelity);
+						voltages, pro_current,
+						con_current, total_conductance, fidelity);
 	} else {
-		process_without_enemies (average_current,	snk, 
+		process_without_enemies (pro_current,	snk, 
 			total_conductance, fidelity);
 	}
 	equiv_resist = 1/total_conductance;
@@ -255,14 +255,14 @@ extern "C" {
 		double equiv_resist = *equiv_resist_c; double fidelity = *fidelity_c;
 		Matrix<double> voltages(nn_row,1,voltages_c); 	Matrix<double> currents(nn_row,1,currents_c); 		
 		Matrix<double> holder (nn_row-2,nn_row-2,1,0);
-		Matrix<double> average_current_hold(nn_row,nn_row,1,0);
-		Matrix<double> red_current_hold(nn_row,nn_row,1,0);
+		Matrix<double> pro_current_hold(nn_row,nn_row,1,0);
+		Matrix<double> con_current_hold(nn_row,nn_row,1,0);
 	
 		//sociomatrix = abs(sociomatrix);
 
 		solve_votes_symmetric (sociomatrix,	fidelities,	
 				src, snk, equiv_resist,	fidelity, voltages, currents, 
-				holder, average_current_hold, red_current_hold);	
+				holder, pro_current_hold, con_current_hold);	
 
 		*equiv_resist_c = equiv_resist; *fidelity_c = fidelity;	
 		for (ii=0; ii < nn_row; ii++) {
@@ -282,7 +282,7 @@ void solve_votes_notsymmetric_raw (
 		double & equiv_resist,	double & fidelity,
 		Matrix<double> & voltages,	Matrix<double> & currents,
 		Matrix<double> & holder, //(nn_row-2,nn_row-2,1,0);
-		Matrix<double> & average_current, Matrix<double> & red_current 
+		Matrix<double> & pro_current, Matrix<double> & con_current 
 ) {
 
 	int nn_row = sociomatrix.rows();
@@ -336,7 +336,7 @@ void solve_votes_notsymmetric_raw (
 
 		solve_votes_symmetric(socio_hold, fidel_hold, src, snk, 
 			equiv_resist, fidelity, voltages,	currents, 
-			holder, average_current, red_current);
+			holder, pro_current, con_current);
 
 		//	if (debug_mode) std::cout << t(voltages) << std::endl;	
 
@@ -381,8 +381,8 @@ extern "C" {
 		Matrix<double> voltages(nn_row,1,voltages_c); 	Matrix<double> currents(nn_row,1,currents_c); 		
 		int ii,rr,cc,ss;
 		Matrix<double> holder (nn_row-2,nn_row-2,1,0);
-		Matrix<double> average_current_hold(nn_row,nn_row,1,0);
-		Matrix<double> red_current_hold(nn_row,nn_row,1,0);
+		Matrix<double> pro_current_hold(nn_row,nn_row,1,0);
+		Matrix<double> con_current_hold(nn_row,nn_row,1,0);
 
 		//	if (debug_mode) std::cout << t(voltages) << std::endl;
 
@@ -400,11 +400,11 @@ extern "C" {
 		if (total_asymm) {
 			solve_votes_notsymmetric_raw (sociomatrix, fidelities, src, snk, 
 				asymmetric,	equiv_resist, fidelity, voltages, currents, 
-				holder, average_current_hold, red_current_hold);		
+				holder, pro_current_hold, con_current_hold);		
 		} else {
 			solve_votes_symmetric (sociomatrix, fidelities, src, snk, 
 				equiv_resist, fidelity, voltages, currents, holder, 
-				average_current_hold, red_current_hold);
+				pro_current_hold, con_current_hold);
 		}
 
 		//	if (debug_mode) std::cout << "svn_c 3" << std::endl;
@@ -415,7 +415,7 @@ extern "C" {
 			currents_c[ii] = currents(ii);	
 		}
 	//	for (ii=0; ii < nn_row*nn_row; ii++) {
-	//		average_current_c[ii] = average_current(ii);
+	//		pro_current_c[ii] = pro_current(ii);
 	//	}
 
 	}
@@ -434,9 +434,9 @@ void get_resistances_fast_symmetric (
 		Matrix<double> sociomatrix,	Matrix<double> fidelities,  
 		Matrix<int> sources, Matrix<int> sinks,
 		Matrix<double> & equiv_resist, Matrix<double> & fidelity,
-		Matrix<double> & blk_curr_a, Matrix<double> & red_curr_a, //) {
-		Matrix<double> & blk_curr_v, Matrix<double> & red_curr_v,
-		Matrix<double> & blk_curr_p, Matrix<double> & red_curr_p,
+		Matrix<double> & pro_curr_a, Matrix<double> & con_curr_a, //) {
+		Matrix<double> & pro_curr_v, Matrix<double> & con_curr_v,
+		Matrix<double> & pro_curr_p, Matrix<double> & con_curr_p,
 		Matrix<double> & ll_save_1, Matrix<double> & ll_save_2, Matrix<double> & ll_save_3	
 	) {
 	
@@ -448,8 +448,8 @@ void get_resistances_fast_symmetric (
 	int enemies_present = 0;
 	for (jj=0; jj<nn_row*nn_row; jj++) enemies_present += 1*(fidelities(jj)<1);
 
-	Matrix<double> blk_curr_hold(nn_row,nn_row,1,0);
-	Matrix<double> red_curr_hold(nn_row,nn_row,1,0);
+	Matrix<double> pro_curr_hold(nn_row,nn_row,1,0);
+	Matrix<double> con_curr_hold(nn_row,nn_row,1,0);
 	Matrix<double> voltages(nn_row,1,1,0);
 	double resist_hold, fidelity_hold;
 
@@ -486,7 +486,7 @@ void get_resistances_fast_symmetric (
 	double max_v, min_v;
 	for (dyad=0; dyad < dyads; dyad++) {
 		for (kk=0; kk < nn_row; kk++) voltages(kk)=0;
-		for (kk=0; kk < nn_row*nn_row; kk++) blk_curr_hold(kk)=0;
+		for (kk=0; kk < nn_row*nn_row; kk++) pro_curr_hold(kk)=0;
 
 		if (sources(dyad) != 0 && sinks(dyad) != 0) { //1+, 2+.
 			for (kk=0; kk<nn_row-1; kk++) voltages(kk+1) = ll_save_1(kk,sources(dyad)-1) - ll_save_1(kk,sinks(dyad)-1);
@@ -514,31 +514,31 @@ void get_resistances_fast_symmetric (
 		//equiv_resist(jj)=max_v - min_v; 
 		resist_hold = max_v-min_v; fidelity_hold=1;
 		for (jj=0; jj<nn_row; jj++) for (kk=0; kk<nn_row; kk++) {
-			blk_curr_hold(jj,kk) = (voltages(jj)-voltages(kk))*
+			pro_curr_hold(jj,kk) = (voltages(jj)-voltages(kk))*
 				(voltages(jj)>voltages(kk))*abs(sociomatrix(jj,kk));
-			red_curr_hold(jj,kk) = 0;
+			con_curr_hold(jj,kk) = 0;
 		}
 		
-	//	if (debug_mode > 2) std::cout << "Black current:" << std::endl << blk_curr_hold << std::endl;
+	//	if (debug_mode > 2) std::cout << "Black current:" << std::endl << pro_curr_hold << std::endl;
 
 		if (enemies_present) {
 			process_for_enemies (sociomatrix, fidelities, 
-				voltages, blk_curr_hold, 
-				red_curr_hold, resist_hold, fidelity_hold);
+				voltages, pro_curr_hold, 
+				con_curr_hold, resist_hold, fidelity_hold);
 		} 
 
 		equiv_resist(dyad) = resist_hold; fidelity(dyad) = fidelity_hold;
 
-		blk_curr_a += blk_curr_hold; red_curr_a += red_curr_hold;
+		pro_curr_a += pro_curr_hold; con_curr_a += con_curr_hold;
 
-		blk_curr_hold /= sqrt(resist_hold); red_curr_hold /= sqrt(resist_hold);
-		blk_curr_p += blk_curr_hold; red_curr_p += red_curr_hold;
-	//	if (debug_mode > 2) std::cout << "Black current 2 :" << std::endl << blk_curr_hold << std::endl;
+		pro_curr_hold /= sqrt(resist_hold); con_curr_hold /= sqrt(resist_hold);
+		pro_curr_p += pro_curr_hold; con_curr_p += con_curr_hold;
+	//	if (debug_mode > 2) std::cout << "Black current 2 :" << std::endl << pro_curr_hold << std::endl;
 
-		blk_curr_hold /= sqrt(resist_hold); red_curr_hold /= sqrt(resist_hold);
-		blk_curr_v += blk_curr_hold; red_curr_v += red_curr_hold;
-	//	if (debug_mode > 2) std::cout << "Black current 3 :" << std::endl << blk_curr_hold << std::endl;
-	//	if (debug_mode > 2) std::cout << "Black current main :" << std::endl << blk_curr_a << std::endl;
+		pro_curr_hold /= sqrt(resist_hold); con_curr_hold /= sqrt(resist_hold);
+		pro_curr_v += pro_curr_hold; con_curr_v += con_curr_hold;
+	//	if (debug_mode > 2) std::cout << "Black current 3 :" << std::endl << pro_curr_hold << std::endl;
+	//	if (debug_mode > 2) std::cout << "Black current main :" << std::endl << pro_curr_a << std::endl;
 
 		if (dyad % 1000 == 0) std::cout << "Done: " << dyad << " of " << dyads << std::endl;
 	}
@@ -554,9 +554,9 @@ extern "C" {
 		const int * src_c, const int * snk_c, const int * dyad_lengths_c, 
 
 		double * equiv_resist_c, double * fidelity_c,
-		double * blk_curr_a_c, double * red_curr_a_c,
-		double * blk_curr_v_c, double * red_curr_v_c,
-		double * blk_curr_p_c, double * red_curr_p_c,
+		double * pro_curr_a_c, double * con_curr_a_c,
+		double * pro_curr_v_c, double * con_curr_v_c,
+		double * pro_curr_p_c, double * con_curr_p_c,
 
 		double * ll_save_1_c, double * ll_save_2_c, double * ll_save_3_c
 	) {
@@ -572,12 +572,12 @@ extern "C" {
 		Matrix<double> equiv_resist(dyad_lengths, 1, equiv_resist_c);
 		Matrix<double> fidelity(dyad_lengths, 1, fidelity_c);
 
-		Matrix<double> blk_curr_a(nn_row, nn_row, 1, 0);
-		Matrix<double> red_curr_a(nn_row, nn_row, 1, 0);
-		Matrix<double> blk_curr_v(nn_row, nn_row, 1, 0);
-		Matrix<double> red_curr_v(nn_row, nn_row, 1, 0);
-		Matrix<double> blk_curr_p(nn_row, nn_row, 1, 0);
-		Matrix<double> red_curr_p(nn_row, nn_row, 1, 0);
+		Matrix<double> pro_curr_a(nn_row, nn_row, 1, 0);
+		Matrix<double> con_curr_a(nn_row, nn_row, 1, 0);
+		Matrix<double> pro_curr_v(nn_row, nn_row, 1, 0);
+		Matrix<double> con_curr_v(nn_row, nn_row, 1, 0);
+		Matrix<double> pro_curr_p(nn_row, nn_row, 1, 0);
+		Matrix<double> con_curr_p(nn_row, nn_row, 1, 0);
 
 		Matrix<double> ll_save_1(nn_row-1, nn_row-1, ll_save_1_c);
 		Matrix<double> ll_save_2(nn_row-1, nn_row-1, ll_save_2_c);
@@ -588,8 +588,8 @@ extern "C" {
 		if (debug_mode) std::cout << "get_resistances_fast_symmetric_c terms loaded." << std::endl;
 
 		get_resistances_fast_symmetric (sociomatrix, fidelities, src, snk,
-			equiv_resist, fidelity, blk_curr_a, red_curr_a, 
-			blk_curr_v, red_curr_v, blk_curr_p, red_curr_p,
+			equiv_resist, fidelity, pro_curr_a, con_curr_a, 
+			pro_curr_v, con_curr_v, pro_curr_p, con_curr_p,
 			ll_save_1, ll_save_2, ll_save_3);
 
 		if (debug_mode) std::cout << "get_resistances_fast_symmetric complete." << std::endl;
@@ -599,9 +599,9 @@ extern "C" {
 		}
 
 		for (kk=0; kk<nn_row*nn_row; kk++) {
-			blk_curr_a_c[kk] = blk_curr_a(kk);	blk_curr_v_c[kk] = blk_curr_v[kk];
-			red_curr_a_c[kk] = red_curr_a(kk);	red_curr_v_c[kk] = red_curr_v[kk];
-			blk_curr_p_c[kk] = blk_curr_p(kk);	red_curr_p_c[kk] = red_curr_p[kk];
+			pro_curr_a_c[kk] = pro_curr_a(kk);	pro_curr_v_c[kk] = pro_curr_v[kk];
+			con_curr_a_c[kk] = con_curr_a(kk);	con_curr_v_c[kk] = con_curr_v[kk];
+			pro_curr_p_c[kk] = pro_curr_p(kk);	con_curr_p_c[kk] = con_curr_p[kk];
 		} 
 		for (kk=0; kk<(nn_row-1)*(nn_row-1); kk++) {
 			ll_save_1_c[kk] = ll_save_1(kk); ll_save_2_c[kk] = ll_save_2(kk); ll_save_3_c[kk] = ll_save_3(kk);
@@ -617,9 +617,9 @@ void get_resistances (
 		Matrix<double> sociomatrix, Matrix<double> fidelities,  
 		Matrix<int> sources, Matrix<int> sinks,
 		Matrix<double> & equiv_resist, Matrix<double> & fidelity,
-		Matrix<double> & blk_curr_a, Matrix<double> & red_curr_a, 
-		Matrix<double> & blk_curr_v, Matrix<double> & red_curr_v,
-		Matrix<double> & blk_curr_p, Matrix<double> & red_curr_p) {
+		Matrix<double> & pro_curr_a, Matrix<double> & con_curr_a, 
+		Matrix<double> & pro_curr_v, Matrix<double> & con_curr_v,
+		Matrix<double> & pro_curr_p, Matrix<double> & con_curr_p) {
 
 	int nn_row = sociomatrix.rows();
 	int rr,cc,ss, t_symm, t_src, t_snk; int total_asymm = 0;
@@ -633,8 +633,8 @@ void get_resistances (
 	Matrix<double> voltage_hold(nn_row,1);
 	Matrix<double> current_hold(nn_row,1);
 	double equiv_resist_hold, fidelity_hold;
-	Matrix<double> average_current_hold(nn_row,nn_row,1,0);
-	Matrix<double> red_current_hold(nn_row,nn_row,1,0);
+	Matrix<double> pro_current_hold(nn_row,nn_row,1,0);
+	Matrix<double> con_current_hold(nn_row,nn_row,1,0);
 
 	if (total_asymm > 0) {
 		ss = 0;
@@ -649,11 +649,11 @@ void get_resistances (
 		if (total_asymm > 0) {
 			solve_votes_notsymmetric_raw (sociomatrix, fidelities, t_src, t_snk,
 				asymmetric, equiv_resist_hold, fidelity_hold, voltage_hold,	
-				current_hold, holder, average_current_hold, red_current_hold);
+				current_hold, holder, pro_current_hold, con_current_hold);
 		} else {
 			solve_votes_symmetric (sociomatrix, fidelities, t_src, t_snk,
 				equiv_resist_hold, fidelity_hold, voltage_hold,	current_hold, 
-				holder, average_current_hold, red_current_hold);
+				holder, pro_current_hold, con_current_hold);
 		}
 		if (debug_mode>2) std::cout << "g-res " << t_src << " " << t_snk << " " << equiv_resist_hold << std::endl;
 
@@ -661,17 +661,17 @@ void get_resistances (
 		fidelity(rr) = fidelity_hold;
 		// results are in the form of constant voltage,
 
-		blk_curr_v += average_current_hold; red_curr_v += red_current_hold; 
+		pro_curr_v += pro_current_hold; con_curr_v += con_current_hold; 
 
 		//trouble if no current to start with...
 		if (1/equiv_resist_hold > 0) {
-			average_current_hold *= sqrt(equiv_resist_hold); 
-			red_current_hold *= sqrt(equiv_resist_hold); 
-			blk_curr_p += average_current_hold; red_curr_p += red_current_hold; 
+			pro_current_hold *= sqrt(equiv_resist_hold); 
+			con_current_hold *= sqrt(equiv_resist_hold); 
+			pro_curr_p += pro_current_hold; con_curr_p += con_current_hold; 
 
-			average_current_hold *= sqrt(equiv_resist_hold); 
-			red_current_hold *= sqrt(equiv_resist_hold); 
-			blk_curr_a += average_current_hold; red_curr_a += red_current_hold; 
+			pro_current_hold *= sqrt(equiv_resist_hold); 
+			con_current_hold *= sqrt(equiv_resist_hold); 
+			pro_curr_a += pro_current_hold; con_curr_a += con_current_hold; 
 		}
 
 	//	if (voltage_hold(0)==-1) break;
@@ -690,9 +690,9 @@ extern "C" {
 			double * equiv_resist_c, double * fidelity_c,
 		//	double * voltages_c, double * currents_c,
 
-			double * blk_curr_a_c, double * red_curr_a_c,
-			double * blk_curr_p_c, double * red_curr_p_c,
-			double * blk_curr_v_c, double * red_curr_v_c) {
+			double * pro_curr_a_c, double * con_curr_a_c,
+			double * pro_curr_p_c, double * con_curr_p_c,
+			double * pro_curr_v_c, double * con_curr_v_c) {
 
 		int nn_row = *nn_row_c; //int saver = *save_results_c;
 		int ii;
@@ -712,18 +712,18 @@ extern "C" {
 	
 		Matrix<int> sources(1, dyad_lengths, src_c);
 		Matrix<int> sinks(1, dyad_lengths, snk_c);
-		Matrix<double> blk_curr_a(nn_row, nn_row, 1, 0);
-		Matrix<double> red_curr_a(nn_row, nn_row, 1, 0);
-		Matrix<double> blk_curr_p(nn_row, nn_row, 1, 0);
-		Matrix<double> red_curr_p(nn_row, nn_row, 1, 0);
-		Matrix<double> blk_curr_v(nn_row, nn_row, 1, 0);
-		Matrix<double> red_curr_v(nn_row, nn_row, 1, 0);
+		Matrix<double> pro_curr_a(nn_row, nn_row, 1, 0);
+		Matrix<double> con_curr_a(nn_row, nn_row, 1, 0);
+		Matrix<double> pro_curr_p(nn_row, nn_row, 1, 0);
+		Matrix<double> con_curr_p(nn_row, nn_row, 1, 0);
+		Matrix<double> pro_curr_v(nn_row, nn_row, 1, 0);
+		Matrix<double> con_curr_v(nn_row, nn_row, 1, 0);
 
 		//	if (debug_mode) std::cout << "in g_r_c" << sociomatrix << std::endl;
 
 		// get_resistances.
 		get_resistances(sociomatrix, fidelities, sources, sinks, equiv_resist, fidelity, 
-			blk_curr_a, red_curr_a, blk_curr_p, red_curr_p, blk_curr_v, red_curr_v);
+			pro_curr_a, con_curr_a, pro_curr_p, con_curr_p, pro_curr_v, con_curr_v);
 
 	//	if (debug_mode > 0) std::cout << ":" << saver << " " << nn_t << " " << dd_t << std::endl;
 	
@@ -749,12 +749,12 @@ extern "C" {
 
 		if (debug_mode > 0) std::cout << "post volt" << std::endl;
 		for (ii=0; ii < nn_row*nn_row; ii++) {
-			blk_curr_a_c[ii] = blk_curr_a(ii);
-			blk_curr_p_c[ii] = blk_curr_p(ii);
-			blk_curr_v_c[ii] = blk_curr_v(ii);
-			red_curr_a_c[ii] = red_curr_a(ii);
-			red_curr_p_c[ii] = red_curr_p(ii);
-			red_curr_v_c[ii] = red_curr_v(ii);
+			pro_curr_a_c[ii] = pro_curr_a(ii);
+			pro_curr_p_c[ii] = pro_curr_p(ii);
+			pro_curr_v_c[ii] = pro_curr_v(ii);
+			con_curr_a_c[ii] = con_curr_a(ii);
+			con_curr_p_c[ii] = con_curr_p(ii);
+			con_curr_v_c[ii] = con_curr_v(ii);
 		}
 		if (debug_mode > 0) std::cout << "post-av-curr" << std::endl;
 
