@@ -155,6 +155,33 @@ extern "C" void pair_sequence_straight (const int * nn,
 }
 
 
+// Because I needed a place for it.
+
+extern "C" void distance_from_coordinates (
+		const double * pos1,
+		const double * pos2,
+		double * output,
+		const int * dp1,
+		const int * dp2,
+		const int * dimspace) {
+
+	int ii, jj, kk;
+	int r1 = *dp1; int r2 = *dp2;
+
+	for (jj=0; jj<r2; ++jj) 
+		for (ii=0; ii<r1; ++ii) {
+			output[ii+r1*jj] = 0;		
+			for (kk=0; kk<*dimspace; ++kk) 
+				output[ii+r1*jj] += (pos1[ii+r1*kk] - pos2[jj+r2*kk])*(pos1[ii+r1*kk] - pos2[jj+r2*kk]);
+			output[ii+r1*jj] = sqrt(output[ii+r1*jj]);		
+		}
+
+	// no return value.	
+}
+
+
+
+
 
 
 

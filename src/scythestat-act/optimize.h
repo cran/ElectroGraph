@@ -780,6 +780,8 @@ namespace scythe {
       ++count;
 
       if (trace){
+
+#ifndef SCYTHE_R_PACKAGE
 	std::cout << "BFGS iteration = " << count << std::endl;
 	std::cout << "thetamin = " << (t(thetamin)) ;
 	std::cout << "gradient = " << (t(fgrad)) ;
@@ -787,6 +789,7 @@ namespace scythe {
 	  (t(fgrad) * fgrad) ;
 	std::cout << "function value = " << fun(thetamin) << 
 	  std::endl << std::endl;
+#endif
       }
       //std::cout << "Hessian = " << hesscdif(fun, theta) << "\n";
       //std::cout << "H = " << H << "\n";

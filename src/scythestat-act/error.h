@@ -57,6 +57,9 @@
 #include <iostream>
 #include <vector>
 
+#include <R_ext/Error.h>
+
+
 /*! @cond */
 #ifdef SCYTHE_DEBUG_LIB
 #define SCYTHE_DEBUG_MSG(MSG)                             \
@@ -593,9 +596,9 @@ namespace scythe
   // The definition of our terminate handler described above
   inline void scythe_terminate ()
   {
-    std::cerr << serr->what() << std::endl;
-    std::cerr << std::endl;
-    abort ();
+
+		Rf_error(serr->what());
+
   }
 
 }        // end namspace SCYTHE

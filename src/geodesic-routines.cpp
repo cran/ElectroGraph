@@ -14,6 +14,7 @@
 
 #include <iostream>
 #include <limits>
+#include <R_ext/Print.h>
 
 double abso (double arg) {return(arg*(arg>0)-arg*(arg<0));}
 
@@ -155,7 +156,7 @@ extern "C" {
 			}
 
 			done[current_node] = 1;	keep_going = 0; for (kk=0; kk<nn; kk++) keep_going += !done[kk];
-			iters++; if (iters>2*nn) {std::cout << "Something went wrong. Break 2" << std::endl; break;}
+			iters++; if (iters>2*nn) {REprintf("Something went wrong. Break 2"); break;}
 			keep_going = (current_node==(*pdest)?0:keep_going);
 		}
 		delete[] done; delete[] node_count; //delete[] spdists;
@@ -520,7 +521,7 @@ Legacy routines here.
 			keep_going = 0; for (kk=0; kk<nn; kk++) keep_going += !done[kk];
 		//	for (kk=0; kk<nn; kk++) std::cout << done[kk];			std::cout << std::endl;
 
-			iters++; if (iters>2*nn) {std::cout << "Something went wrong. Break 2" << std::endl; break;}
+			iters++; if (iters>2*nn) {REprintf("Something went wrong. Break 2"); break;}
 		}
 
 //		for (kk=0; kk<nn; kk++) std::cout << kk << "," << node_count[kk] << "; ";	std::cout << std::endl;

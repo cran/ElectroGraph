@@ -54,6 +54,14 @@ edge.processor <- function(inputmat, symmetric, fidelities, missing.numbers.impl
   #relabel.
   new.pairs <- cbind(match(inputmat[,1],id.names),
                      match(inputmat[,2],id.names))
+
+  #does it have an opposite number? If so, it's not symmetric.
+  if (symmetric) {
+    c1 <- (new.pairs[,1]-1)+(new.pairs[,2]-1)*nn
+    c2 <- (new.pairs[,2]-1)+(new.pairs[,1]-1)*nn
+    if (sum(!is.na((match(c1,c2))))>0) symmetric <- FALSE
+  }
+  
   old.labels <- inputmat[,1:2]
   if (!any(cols==2:4)) stop("Edge matrix must have 2, 3 or 4 columns.")
   if (cols==4) {new.pairs <- rbind(new.pairs, new.pairs[,2:1]); values <- c(inputmat[,3:4])} else {
@@ -83,12 +91,12 @@ sociomatrix.to.nby3.edges <- function(sociomatrix, keep.labels=FALSE) {
   nonzeros <- which(sociomatrix > 0)
   if (keep.labels) {
     labels <- rownames(sociomatrix)
-    output <- data.frame(send=labels[floor((nonzeros-1)/nn)+1],
-                         rec=labels[(nonzeros-1) %% nn + 1],
+    output <- data.frame(send=labels[(nonzeros-1) %% nn + 1],
+                         rec=labels[floor((nonzeros-1)/nn)+1],
                          val=sociomatrix[nonzeros])
   } else {
-    output <- data.frame(send=floor((nonzeros-1)/nn)+1,
-                         rec=(nonzeros-1) %% nn + 1,
+    output <- data.frame(send=(nonzeros-1) %% nn + 1,
+                         rec=floor((nonzeros-1)/nn)+1,
                          val=sociomatrix[nonzeros])
   }
   

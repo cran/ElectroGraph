@@ -15,6 +15,7 @@
 #include <R.h>
 #include <Rmath.h>
 #include <sys/time.h>
+
 const int debug_mode_adapt = 0;
 
 double seconds () {
@@ -147,7 +148,7 @@ void network_projection_by_connectivity (double * connectivity,
 		if (biggest_move < threshold) break;
 		if (niter - iteration == 9) {
 			time_2 = seconds(); time_1 = (time_2 - time_1)*(double)niter/10;
-			if (verbose) printf ("Maximum seconds remaining in plot: %f\n", time_1);
+			if (verbose) Rprintf ("Maximum seconds remaining in plot: %f\n", time_1);
 		}
 	}
 
@@ -305,7 +306,7 @@ void network_projection_by_connectivity_sparsish (double * connectivity,
 		if (biggest_move < threshold) break;
 		if (niter - iteration == 9) {
 			time_2 = seconds(); time_1 = (time_2 - time_1)*(double)niter/10;
-			if (verbose) printf ("Maximum seconds remaining in plot: %f\n", time_1);
+			if (verbose) Rprintf ("Maximum seconds remaining in plot: %f\n", time_1);
 		}
 	}
 

@@ -18,6 +18,7 @@
 #include "scythe-extended.h"
 #include "electrograph-routines.h"
 
+#include <R_ext/Print.h>
 int debug_mode = 0;
 
 inline double abs (double input) {return (input<0?-input:input);}
@@ -156,7 +157,7 @@ void process_without_enemies (
 	for (cc=0; cc<pro_current.rows(); cc++) {
 		av_hl += pro_current(cc,snk);
 	}	
-	if (debug_mode > 2) std::cout << "wo " << snk << ":" << av_hl << std::endl;
+	//if (debug_mode > 2) std::cout << "wo " << snk << ":" << av_hl << std::endl;
 	total_conductance_strength = av_hl;
 	total_conductance_fidelity = 1; //1 to -1.
 
@@ -481,7 +482,7 @@ void get_resistances_fast_symmetric (
 	ll_save_2 = inv(ll_save_2);
 	ll_save_3 = inv(ll_save_3);
 
-	if (debug_mode > 0) std::cout << "Inversions complete." << std::endl;
+	if (debug_mode > 0) Rprintf("Inversions complete.");
 
 	double max_v, min_v;
 	for (dyad=0; dyad < dyads; dyad++) {
@@ -540,7 +541,8 @@ void get_resistances_fast_symmetric (
 	//	if (debug_mode > 2) std::cout << "Black current 3 :" << std::endl << pro_curr_hold << std::endl;
 	//	if (debug_mode > 2) std::cout << "Black current main :" << std::endl << pro_curr_a << std::endl;
 
-		if (dyad % 1000 == 0) std::cout << "Done: " << dyad << " of " << dyads << std::endl;
+		if (dyad % 1000 == 0) Rprintf ("Done: %i of %i.", dyad, dyads);
+			   //std::cout << "Done: " << dyad << " of " << dyads << std::endl;
 	}
 
 }
@@ -560,7 +562,9 @@ extern "C" {
 
 		double * ll_save_1_c, double * ll_save_2_c, double * ll_save_3_c
 	) {
-		if (debug_mode) std::cout << "get_resistances_fast_symmetric_c entering." << std::endl;
+		if (debug_mode) Rprintf ("get_resistances_fast_symmetric_c entering.");
+
+			//std::cout << "get_resistances_fast_symmetric_c entering." << std::endl;
 
 		int nn_row = *nn_row_c, dyad_lengths = *dyad_lengths_c;
 		int kk;
@@ -583,16 +587,16 @@ extern "C" {
 		Matrix<double> ll_save_2(nn_row-1, nn_row-1, ll_save_2_c);
 		Matrix<double> ll_save_3(nn_row-1, nn_row-1, ll_save_3_c);
 	
-		if (debug_mode > 1) std::cout << "Fidelities:" << fidelities << std::endl;		
+		//if (debug_mode > 1) std::cout << "Fidelities:" << fidelities << std::endl;		
 
-		if (debug_mode) std::cout << "get_resistances_fast_symmetric_c terms loaded." << std::endl;
+		if (debug_mode) Rprintf("get_resistances_fast_symmetric_c terms loaded.");
 
 		get_resistances_fast_symmetric (sociomatrix, fidelities, src, snk,
 			equiv_resist, fidelity, pro_curr_a, con_curr_a, 
 			pro_curr_v, con_curr_v, pro_curr_p, con_curr_p,
 			ll_save_1, ll_save_2, ll_save_3);
 
-		if (debug_mode) std::cout << "get_resistances_fast_symmetric complete." << std::endl;
+		if (debug_mode) Rprintf("get_resistances_fast_symmetric complete.");
 
 		for (kk=0; kk<dyad_lengths; kk++) {
 			equiv_resist_c[kk] = equiv_resist(kk); fidelity_c[kk] = fidelity(kk);
@@ -655,7 +659,7 @@ void get_resistances (
 				equiv_resist_hold, fidelity_hold, voltage_hold,	current_hold, 
 				holder, pro_current_hold, con_current_hold);
 		}
-		if (debug_mode>2) std::cout << "g-res " << t_src << " " << t_snk << " " << equiv_resist_hold << std::endl;
+	//	if (debug_mode>2) std::cout << "g-res " << t_src << " " << t_snk << " " << equiv_resist_hold << std::endl;
 
 		equiv_resist(rr) = equiv_resist_hold;
 		fidelity(rr) = fidelity_hold;
@@ -675,7 +679,8 @@ void get_resistances (
 		}
 
 	//	if (voltage_hold(0)==-1) break;
-		if ((rr+1) % 1000 == 0) std::cout << "Done: " << rr+1 << " " << nn_row << std::endl;
+
+		if ((rr+1) % 1000 == 0) Rprintf ("Done: %i of %i.", rr+1, nn_row); //std::cout << "Done: " << rr+1 << " " << nn_row << std::endl;
 
 	}
 
@@ -708,7 +713,7 @@ extern "C" {
 	//	dd_t = saver*dyad_lengths + (1-saver);
 
 	//	if (debug_mode > 0) std::cout << saver << " " << nn_t << " " << dd_t << std::endl;
-		if (debug_mode > 0) std::cout << nn_row << " " << dyad_lengths << std::endl;
+	//	if (debug_mode > 0) std::cout << nn_row << " " << dyad_lengths << std::endl;
 	
 		Matrix<int> sources(1, dyad_lengths, src_c);
 		Matrix<int> sinks(1, dyad_lengths, snk_c);
@@ -734,7 +739,7 @@ extern "C" {
 			equiv_resist_c[ii] = equiv_resist(ii); 
 			fidelity_c[ii] = fidelity(ii);
 		}	
-		if (debug_mode > 0) std::cout << "post eq-fid" << std::endl;
+		if (debug_mode > 0) Rprintf("post eq-fid");
 
 /*		if (saver) {
 			if (debug_mode) std::cout << "saving results" << std::endl;
@@ -747,7 +752,7 @@ extern "C" {
 			currents_c[0] = 0;
 		} */
 
-		if (debug_mode > 0) std::cout << "post volt" << std::endl;
+		if (debug_mode > 0) Rprintf("post volt");
 		for (ii=0; ii < nn_row*nn_row; ii++) {
 			pro_curr_a_c[ii] = pro_curr_a(ii);
 			pro_curr_p_c[ii] = pro_curr_p(ii);
@@ -756,7 +761,7 @@ extern "C" {
 			con_curr_p_c[ii] = con_curr_p(ii);
 			con_curr_v_c[ii] = con_curr_v(ii);
 		}
-		if (debug_mode > 0) std::cout << "post-av-curr" << std::endl;
+		if (debug_mode > 0) Rprintf("post-av-curr");
 
 
 		//	if (debug_mode) std::cout << "done g_r_c" << std::endl;

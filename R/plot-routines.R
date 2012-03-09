@@ -768,7 +768,7 @@ plot.electrograph.plot <- function(x, sociomatrix=NULL, edgelist=NULL, verbose=1
   }
   
   plot.electrograph.core (x$coordinates, sociomatrix=sociomatrix,
-                          fidelity=x$grand.fidelity,
+                          fidelity.matrix=x$grand.fidelity,
                           new.coord.hold=x$new.coord.hold,
                           node.colors=x$node.colors, label.colors=x$label.colors,
                           node.cex=x$node.cex, label.cex=x$label.cex,
@@ -787,7 +787,7 @@ plot.electrograph.plot <- function(x, sociomatrix=NULL, edgelist=NULL, verbose=1
 
 
 
-plot.wedding.cake <- function(x, connectivity.mode="visible.ties",
+wedding.cake.plot <- function(x, connectivity.mode="visible.ties",
                               force.mode="fruchterman.reingold",
                               ego.focus=NULL,
                               filebase="electrograph-cake", #type="png",
@@ -903,7 +903,7 @@ dist.to.pair <- function(others, pair) {
   return(sqrt(out))
 }
 #from coordinates, n by 2, to distances, n by n.
-dist.coords <- function(coords) {
+dist.coords.old <- function(coords) {
   dists <- array(0,rep(dim(coords)[1],2))
   for (kk in 1:dim(coords)[2]) {
     dists <- dists+(array(coords[,kk],dim(dists))-t(array(coords[,kk],dim(dists))))^2
@@ -911,7 +911,20 @@ dist.coords <- function(coords) {
   dists <- sqrt(dists)
   return(dists)
 }
-
+dist.coords <- function(coords, coords2=NULL) {
+  if (is.null(coords2)) coords2 <- coords
+  coords <- as.matrix(coords)
+  coords2 <- as.matrix(coords2)
+  t1 <- array(.C("distance_from_coordinates",
+                 pos1=as.double(coords),
+                 pos2=as.double(coords2),
+                 output=as.double(rep(0, dim(coords)[1]*dim(coords2)[1])),
+                 dp1=as.integer(dim(coords)[1]),
+                 dp2=as.integer(dim(coords2)[1]),
+                 dimspace=as.integer(dim(coords)[2]))$output, c(dim(coords)[1],dim(coords2)[1]))
+  return(t1)
+  
+}
   
 
 

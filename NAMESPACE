@@ -19,7 +19,7 @@ export(network.projection,
 		compute.volts.asymmetric.socio,		compute.volts.asymmetric.edges,
 		compute.volts.symmetric.socio,		compute.volts.symmetric.edges,
 
-	   plot.wedding.cake,
+                wedding.cake.plot,
 		animate.plot.series,
 
 		clustering.statistics.socio,	
@@ -33,10 +33,15 @@ export(network.projection,
 
 		recourse.betweenness.one,
 		recourse.betweenness.source,
-		recourse.betweenness.full
+		recourse.betweenness.full,
+
+
+       dist.coords
+
 
 	#	geodesic.mat.socio,		shortest.path.maker.socio,		betweenness.centralities.in.r,  ##
 	#	betweenness.centralities.socio,		single.source.betweenness.socio   ##
+
 )
 
 S3method(plot,electrograph)

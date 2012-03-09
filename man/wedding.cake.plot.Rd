@@ -1,11 +1,11 @@
-\name{plot.wedding.cake}
-\alias{plot.wedding.cake}
-\title{plot.wedding.cake}
+\name{wedding.cake.plot}
+\alias{wedding.cake.plot}
+\title{wedding.cake.plot}
 \description{
 Given an electrograph object for a valued relational data set, create a series of plots that illustrate the graph at various threshold levels for tie existence.
 }
 \usage{
-plot.wedding.cake(x, connectivity.mode="visible.ties", force.mode="fruchterman.reingold",
+wedding.cake.plot(x, connectivity.mode="visible.ties", force.mode="fruchterman.reingold",
                   ego.focus=NULL, filebase="electrograph-cake", #type="png",
                   lower.bound=NULL, upper.bound=NULL, main.title=TRUE, 
 		  plot.width = 600, plot.height = 600, verbose = 1, ...) 
@@ -35,7 +35,7 @@ pts <- pair.sequence(10)
 edges <- exp(rnorm(dim(pts)[1],0,1))
 socio <- electrograph(cbind(pts,edges))
 
-plot.wedding.cake(socio)
+wedding.cake.plot(socio)
 
 }
 
