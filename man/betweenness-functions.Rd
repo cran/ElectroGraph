@@ -43,7 +43,7 @@ recourse.betweenness.full (edgelist, penalty=20, path.weight=c("constant","close
   #Ring lattice.
   edgelist <- cbind(c(1:5, 2:5, 1), c(2:5,1, 1:5))
 
-  shortest.path.maker (edgelist)
+  geodesic.selected.from.edgelist (edgelist)
   single.source.betweenness (edgelist)
   betweenness.centralities (edgelist, path.weight="constant")
 

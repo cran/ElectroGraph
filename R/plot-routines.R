@@ -754,7 +754,18 @@ plot.electrograph <-
 
 #the natural move here: make "plot.electrograph.plot", which just takes an electrograph.plot object and sends it to electrograph.core.
 #build in overrides.
-plot.electrograph.plot <- function(x, sociomatrix=NULL, edgelist=NULL, verbose=1, ...) {
+plot.electrograph.plot <- function(x, sociomatrix=NULL, edgelist=NULL, verbose=1,
+                                   node.colors=x$node.colors,
+                                   label.colors=x$label.colors,
+                                   node.cex=x$node.cex,
+                                   label.cex=x$label.cex,
+                                   component.border.col=x$component.border.col,
+                                   source.sink.pair=x$source.sink.pair,
+                                   line.thickness=x$line.thickness,
+                                   tick.marks=x$tick.marks,
+                                   edge.colors.specified=x$edge.colors.specified,
+                                   edge.color.fr.ne.em=x$edge.color.fr.ne.em,
+                                   ...) {
 
   #Add options.
   #if (class(x)!="electrograph.plot") stop ("Object should be of class electrograph.plot.")
@@ -770,14 +781,14 @@ plot.electrograph.plot <- function(x, sociomatrix=NULL, edgelist=NULL, verbose=1
   plot.electrograph.core (x$coordinates, sociomatrix=sociomatrix,
                           fidelity.matrix=x$grand.fidelity,
                           new.coord.hold=x$new.coord.hold,
-                          node.colors=x$node.colors, label.colors=x$label.colors,
-                          node.cex=x$node.cex, label.cex=x$label.cex,
-                          component.border.col=x$component.border.col,
-                          source.sink.pair=x$source.sink.pair,
-                          line.thickness=x$line.thickness,
-                          tick.marks=x$tick.marks,
-                          line.colors=x$edge.colors.specified,
-                          edge.color.fr.ne.em=x$edge.color.fr.ne.em,
+                          node.colors=node.colors, label.colors=label.colors,
+                          node.cex=node.cex, label.cex=label.cex,
+                          component.border.col=component.border.col,
+                          source.sink.pair=source.sink.pair,
+                          line.thickness=line.thickness,
+                          tick.marks=tick.marks,
+                          line.colors=edge.colors.specified,
+                          edge.color.fr.ne.em=edge.color.fr.ne.em,
                           verbose=verbose,
                           ...)
 

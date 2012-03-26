@@ -339,7 +339,7 @@ electrograph <- function(input, make.edgelist.symmetric=TRUE,
   #if (verbose) message("Finished electrograph object loading.")
 
   if (shortest.paths.get) {
-    out$geodesic <- geodesic.mat(nby3, node.ids=node.ids)
+    out$geodesic <- geodesic.matrix.from.edgelist(nby3, node.ids=node.ids)
     if (verbose) message("Finished geodesic path length calculation.")
   }
 
@@ -364,26 +364,27 @@ electrograph <- function(input, make.edgelist.symmetric=TRUE,
 }
 
 
-add.shortest.paths <- function(e.graph) {e.graph$geodesic <- geodesic.mat(e.graph$nby3, node.ids=e.graph$node.ids); return(e.graph)}
+add.shortest.paths <- function(e.graph) {e.graph$geodesic <- geodesic.matrix.from.edgelist(e.graph$nby3, node.ids=e.graph$node.ids); return(e.graph)}
 add.betweenness <- function(e.graph) {bet.hold <- betweenness.centralities(e.graph$nby3, node.ids=e.graph$node.ids); e.graph$edge.betweenness <- bet.hold$edgewise; e.graph$node.betweenness <- bet.hold$nodal; return(e.graph)}
 add.recourse.betweenness <- function(e.graph) {e.graph$recourse.betweenness <- recourse.betweenness.full(e.graph$nby3); return(e.graph)}
 
 
 #gets transitivity/cycles from a sociomatrix.
-clustering.statistics.socio <- function(sociomatrix) {
+clustering.statistics.socio <- function(sociomatrix, verbose=0) {
   nn <- dim(sociomatrix)[1]
   clusts <- .C("clustering_statistics_socio",
                socio=as.double(sociomatrix),
                nn=as.integer(nn),
                transitives=as.double(rep(0,nn)),
-               cycles=as.double(rep(0,nn)))
+               cycles=as.double(rep(0,nn)),
+               verbose=as.integer(verbose))
   out <- data.frame(transitives=clusts$transitives,
                     cycles=clusts$cycles)
   return(out)
 }
 
 #based on the current properties of the object, generate as many summary statistics as possible without further analysis.
-summary.electrograph <- function(object, ...) {
+summary.electrograph <- function(object, verbose=0, ...) {
   #quantities:
   #node level: electro-distance centrality, standard centrality, average current centrality
   #noted: for one extremely tight, isolated pair, this is a bad measure.
@@ -401,7 +402,8 @@ summary.electrograph <- function(object, ...) {
                       indegree=as.double(rep(0,nn)),
                       outdegree=as.double(rep(0,nn)),
                       transitives=as.double(rep(0,nn)),
-                      cycles=as.double(rep(0,nn)))
+                      cycles=as.double(rep(0,nn)),
+                      verbose=as.integer(verbose))
   
   out <- data.frame(out.deg=intermediates$outdegree,
                     in.deg=intermediates$indegree,
@@ -445,22 +447,27 @@ summary.electrograph <- function(object, ...) {
 }
 
 
-print.electrograph <- function(x, ...) {
+print.electrograph <- function(x, max.count=NULL, ...) {
 
+  message(paste("Number of nodes:", length(x$component.vector)))
+  
   message("Head of edge list nby3:")
-  hnby3 <- head(x$nby3)
+  if (is.null(max.count)) edgecount <- 6 else edgecount <- max.count
+  hnby3 <- head(x$nby3, edgecount)
   print(data.frame(source=x$node.ids[hnby3[,1]], sink=x$node.ids[hnby3[,2]], value=hnby3[,3]))
 
-  writeLines(paste("component.vector"))
-  print(t(x$component.vector))
+  message(paste("Number of components:", length(unique(x$component.vector))))
+
+  message("component.vector:")
+  if (is.null(max.count)) print(t(x$component.vector)) else print(t(head(x$component.vector, max.count)))
 
   #writeLines(paste("component.diameters"))
   #print(t(x$diameters))
   
-  writeLines(paste("Symmetric:",x$symmetric))
+  message(paste("Symmetric:",x$symmetric))
 
   if (!is.null(x$source.sink)) {
-    writeLines(paste("source.sink pairs for Ohmic calculations"))
+    message(paste("source.sink pairs for Ohmic calculations"))
     print(t(x$source.sink))
   }
 

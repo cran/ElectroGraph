@@ -3,7 +3,7 @@
 # geodesic-routines.cpp 
 #
 # Andrew C. Thomas <act@acthomas.ca>
-# Last modified: January 19, 2011
+# Last modified: March 28, 2012
 # Licensed under the GNU General Public License version 2 (June, 1991)
 #
 # Handles the calculation of geodesically derived quantities,.
@@ -301,12 +301,13 @@ extern "C" {
 				double * outweight, // ee vector.
 
 				const int * pnn,	const int * pedges,
-				const int * distance_weight,	const double * ppenalty) {
+				const int * distance_weight,	const double * ppenalty,
+				const int * verbose) {
 
 		int sources, kk, ll, dest;
 		int nn = *pnn; int ee = *pedges; 
 		int ddw = *distance_weight;
-
+		
 	//	std::cout << "cbf: " << nn << " " << ee << std::endl;
 
 		double totalweight = 0;
@@ -341,16 +342,87 @@ extern "C" {
 		const double * sociomatrix_c,
 		const int * nn_row_c,
 		double * transitives,
-		double * cycles) {
-
-		int nn_row = *nn_row_c;
+		double * cycles,
+		const int *pverbose) {
+		
+		if (*pverbose) Rprintf ("starting clustering.\n");
+	
+ 		int nn_row = *nn_row_c;
 		int ii,jj,kk;
 
 		double sum_n, sum_d;		
 
 		//for (kk=0; kk<nn_row; kk++) {transitives[kk]=0;	cycles[kk]=0;}
 		for (kk=0; kk<nn_row; kk++) {
+			if (*pverbose > 1 & kk % 100 == 0) Rprintf ("clustering node %i.\n",kk);
+
 			sum_n=0; sum_d=0; //cycles.
+			for (ii=0; ii<nn_row; ii++) if (sociomatrix_c[kk+nn_row*ii] > 0) 
+				for (jj=0; jj<nn_row; jj++) if (sociomatrix_c[jj+nn_row*kk] > 0) {
+					sum_n += (sociomatrix_c[ii+nn_row*jj]*sociomatrix_c[jj+nn_row*kk]*
+									sociomatrix_c[kk+nn_row*ii]);
+					sum_d += (sociomatrix_c[jj+nn_row*kk]*sociomatrix_c[kk+nn_row*ii]);
+				}
+			if (sum_d==0) sum_d = 1;
+			cycles[kk] = sum_n/sum_d;
+
+			sum_n=0; sum_d=0; //transitives.
+			for (ii=0; ii<nn_row; ii++) if (sociomatrix_c[ii+nn_row*kk] > 0)
+				for (jj=0; jj<nn_row; jj++) if (sociomatrix_c[jj+nn_row*kk]>0) {
+					sum_n += (sociomatrix_c[ii+nn_row*jj]*sociomatrix_c[jj+nn_row*kk]*
+									sociomatrix_c[ii+nn_row*kk]);
+					sum_d += (sociomatrix_c[jj+nn_row*kk]*sociomatrix_c[ii+nn_row*kk]);
+			}
+			if (sum_d==0) sum_d = 1;
+			transitives[kk] = sum_n/sum_d;
+		}
+
+	}
+
+	/*void clustering_statistics_edgelist (
+
+			const int * edges_c,
+			const double * values,
+
+			const double * sociomatrix,
+
+			const int * pnn, const int *pedge,
+								
+			double * transitives,
+			double * cycles,
+
+			int verbose) {
+
+		int nn = *pnn; int ee = *pedge;
+		int ii,jj,kk,ll, icount, ocount;
+
+		double * inbound = new double[nn]; double * outbound = new double[nn];
+		double sum_n, sum_d;
+				
+
+		//for (kk=0; kk<nn_row; kk++) {transitives[kk]=0;	cycles[kk]=0;}
+		for (kk=0; kk<nn; ++kk) {
+
+			// clear!
+			for (ii=0; ii<nn; ++ii) {inbound[ii]=0; outbound[ii]=0;}
+			icount=0; ocount=0;
+
+			// edge sweep one.
+			for (ll=0; ll<ee; ++ll) {
+				if (edges_c[ll]==kk) {outbound[ocount]=edges_c[ll+ee]; ++ocount;}
+				if (edges_c[ll+ee]==kk) {inbound[icount]=edges_c[ll]; ++icount;}
+			}
+
+
+			// sweep two: check the sociomatrix for the picked-up values.
+			sum_n=0; sum_d=0;for (ii=0; ll<ee; ++ll) {
+				
+
+
+			}
+
+			
+			 //cycles.
 			for (ii=0; ii<nn_row; ii++) for (jj=0; jj<nn_row; jj++) {
 				sum_n += (sociomatrix_c[ii+nn_row*jj]*sociomatrix_c[jj+nn_row*kk]*
 								sociomatrix_c[kk+nn_row*ii]);
@@ -369,25 +441,30 @@ extern "C" {
 			transitives[kk] = sum_n/sum_d;
 		}
 
-	}
+		delete[] inbound; delete[] outbound;
+
+	}  */
 
 
 	void short_length_statistics (const int * edges, const double * values, //edges 0:n-1.
 								const int * pnn, const int *pedge,
 								double * indegree, double * outdegree,
-								double * transitives, double * cycles) {
+								double * transitives, double * cycles,
+								const int * pverbose) {
 
-
-		int nn = *pnn; int ee = *pedge;
+		int nn = *pnn; int ee = *pedge; int verbose = *pverbose;
 		double * sociomatrix = new double[nn*nn];
 		int kk,ll;
 
 		//std::cout << "sls " << nn << " " << ee << std::endl;
 
+		if (verbose) Rprintf ("Declaring output variables.\n");
+
 		for (kk=0; kk<nn; kk++) {indegree[kk]=0; outdegree[kk]=0; transitives[kk]=0; cycles[kk]=0;}
 		for (kk=0; kk<nn*nn; kk++) sociomatrix[kk]=0;
 		//for (kk=0; kk<nn; kk++) std::cout << outdegree[kk] << " " << indegree[kk] << " " << transitives << " " << cycles << std::endl;
 
+		if (verbose) Rprintf ("Seeding degree variables.\n");
 		for (ll=0; ll<ee; ll++) {
 			sociomatrix[edges[ll]+nn*edges[ll+ee]] = values[ll];
 			outdegree[edges[ll]] += values[ll];
@@ -395,10 +472,13 @@ extern "C" {
 		}
 		//std::cout << "sls2 " << nn << " " << ee << " "; for (kk=0; kk<nn; kk++) std::cout << outdegree[kk]; std::cout << std::endl;
 
-		clustering_statistics_socio (sociomatrix, pnn, transitives, cycles);
+		if (verbose) Rprintf ("Starting cyclic degree variables.\n");
+		clustering_statistics_socio (sociomatrix, pnn, transitives, cycles, pverbose);
 
 		//std::cout << "sls3 " << nn << " " << ee << " ";
 		//for (kk=0; kk<nn; kk++) std::cout << outdegree[kk] << " " << indegree[kk] << " " << transitives << " " << cycles << std::endl;
+
+		if (verbose) Rprintf ("Finished short_length_statistics.\n");
 
 		delete[] sociomatrix;
 	}

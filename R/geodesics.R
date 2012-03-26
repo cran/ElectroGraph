@@ -9,19 +9,24 @@
 ##########################################################################
 
 
-shortest.path.maker <- function(edgelist, sourcepoint=1, destpoint=NULL, node.ids=NULL) {
+#This routine assumes a 1:n notation for the node IDs.
+geodesic.selected.from.edgelist <- function(edgelist, sourcepoint=1, destpoint=NULL, node.ids=NULL) {
   if (dim(edgelist)[2] != 2 & dim(edgelist)[2] != 3) {
     stop ("edgelist needs to be k-by-2 or k-by-3 in dimension.")
   } else if (dim(edgelist)[2] == 2) edgelist <- cbind(edgelist, 1)
 
-
   #if the edgelist is unprocessed?
-  edgelist <- as.matrix(edgelist); if (!is.numeric(edgelist)) stop ("shortest.path.maker error: edgelist input must be numeric, and should correspond to the vector (1:n).")
+  edgelist <- as.matrix(edgelist); if (!is.numeric(edgelist)) stop ("geodesic.selected.from.edgelist error: edgelist input must be numeric, and should correspond to the vector (1:n).")
 
-  
-  nn <- length(unique(c(edgelist[,1:2])))
-  if (is.null(node.ids)) node.ids <- 1:nn else if (length(node.ids)<nn) stop("Length of node.ids does not match number of nodes.")
-
+  nn.temp <- max(c(edgelist))
+    
+  if (is.null(node.ids)) {
+    node.ids <- 1:nn.temp
+    nn <- nn.temp
+  } else {
+    nn <- length(node.ids)
+    if (nn.temp > nn) stop("geodesic-selected error: Length of node.ids is shorter than the apparent number of nodes in edgelist.")
+  }
 
   if (is.null(destpoint)) destpoint <- nn+1;  #no destpoint.
   output <- cbind(.C("dijkstra_single",
@@ -38,20 +43,32 @@ shortest.path.maker <- function(edgelist, sourcepoint=1, destpoint=NULL, node.id
   return (output)
 }
 
-
-geodesic.mat <- function(edgelist, node.ids=NULL) {
+#This routine assumes a 1:n notation for the node IDs.
+geodesic.matrix.from.edgelist <- function(edgelist, node.ids=NULL) {
+  
   if (dim(edgelist)[2] != 2 & dim(edgelist)[2] != 3) {
     stop ("edgelist needs to be k-by-2 or k-by-3 in dimension.")
   } else if (dim(edgelist)[2] == 2) edgelist <- cbind(edgelist, 1)
 
   #if the edgelist is unprocessed?
   edgelist <- as.matrix(edgelist); if (!is.numeric(edgelist)) stop ("geodesic matrix error: edgelist input must be numeric, and should correspond to the vector (1:n).")
+
+  nn.temp <- max(c(edgelist))
+    
+  if (is.null(node.ids)) {
+    node.ids <- 1:nn.temp
+    nn <- nn.temp
+  } else {
+    nn <- length(node.ids)
+    if (nn.temp > nn) stop("geodesic matrix error: Length of node.ids is shorter than the apparent number of nodes in edgelist.")
+  }
   
-  nn <- max(edgelist[,1:2])
-  if (is.null(node.ids)) node.ids <- 1:nn else if (length(node.ids)<nn) stop("geodesic matrix error: Length of node.ids does not match number of nodes.")
-  output <- array(.C("dijkstra_all", edges=as.integer(edgelist[,1:2]-1), strengths=as.double(edgelist[,3]),
-             output=as.double(rep(0, nn^2)), nn=as.integer(nn),
-             pedges=as.integer(dim(edgelist)[1]))$output, rep(nn,2))
+  output <- array(.C("dijkstra_all",
+                     edges=as.integer(edgelist[,1:2]-1),
+                     strengths=as.double(edgelist[,3]),
+                     output=as.double(rep(0, nn^2)),
+                     nn=as.integer(nn),
+                     pedges=as.integer(dim(edgelist)[1]))$output, rep(nn,2))
   
   shortest <- min(output[output>0]); output[output>1e42*shortest] <- Inf
   colnames(output) <- rownames(output) <- node.ids   
@@ -230,7 +247,7 @@ geodesic.mat.socio <- function(sociomatrix) {
 
 
 
-shortest.path.maker.socio <- function(sociomatrix, sourcepoint=1) {
+geodesic.selected.from.edgelist.socio <- function(sociomatrix, sourcepoint=1) {
   dists <- .C("dijkstra_single_socio", input=as.double(sociomatrix),
               output=as.double(rep(0, dim(sociomatrix)[1])),
               dim1=as.integer(dim(sociomatrix)[1]),

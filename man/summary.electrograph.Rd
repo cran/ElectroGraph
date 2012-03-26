@@ -6,11 +6,13 @@
 Given an electrograph object, summarize the qualities of its nodes.
 }
 \usage{
-\method{summary}{electrograph}(object, ...)
-\method{print}{electrograph}(x, ...)
+\method{summary}{electrograph}(object, verbose = 0, ...)
+\method{print}{electrograph}(x, max.count = NULL, ...)
 }
 \arguments{
   \item{x, object}{An object of class ``electrograph''.}
+  \item{verbose}{Display additional information.}
+  \item{max.count}{The maximum number of components to be displayed in output.}
   \item{...}{(no further options currently available)}
 }
 \value{

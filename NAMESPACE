@@ -1,43 +1,41 @@
 useDynLib(ElectroGraph)
 export(network.projection,
-		pair.sequence,
+       pair.sequence,
 
-		make.sociomatrix.from.edges,
-		make.sociomatrix.from.lattice,
+       make.sociomatrix.from.edges,
+       make.sociomatrix.from.lattice,
 
 	#	edge.processor,		sym.test,   ##
 	#	network.components.edges,		network.components.socio,  ##
 
-		electrograph,
-		get.resistance,
-		ohmic.properties,
-		add.shortest.paths,
-		add.betweenness,
-		add.recourse.betweenness,
+       electrograph,
+       get.resistance,
+       ohmic.properties,
+       add.shortest.paths,
+       add.betweenness,
+       add.recourse.betweenness,
 
 	#	twosome.solve.socio,		twosome.solve.edges,	##
-		compute.volts.asymmetric.socio,		compute.volts.asymmetric.edges,
-		compute.volts.symmetric.socio,		compute.volts.symmetric.edges,
+       compute.volts.asymmetric.socio,		compute.volts.asymmetric.edges,
+       compute.volts.symmetric.socio,		compute.volts.symmetric.edges,
 
-                wedding.cake.plot,
-		animate.plot.series,
+       wedding.cake.plot,
+       animate.plot.series,
 
-		clustering.statistics.socio,	
-		sociomatrix.to.nby3.edges,
+       clustering.statistics.socio,	
+       sociomatrix.to.nby3.edges,
 
-		shortest.path.maker,
-		geodesic.mat,
+       geodesic.selected.from.edgelist,
+       geodesic.matrix.from.edgelist,
 
-		single.source.betweenness,
-		betweenness.centralities,
+       single.source.betweenness,
+       betweenness.centralities,
 
-		recourse.betweenness.one,
-		recourse.betweenness.source,
-		recourse.betweenness.full,
-
+       recourse.betweenness.one,
+       recourse.betweenness.source,
+       recourse.betweenness.full,
 
        dist.coords
-
 
 	#	geodesic.mat.socio,		shortest.path.maker.socio,		betweenness.centralities.in.r,  ##
 	#	betweenness.centralities.socio,		single.source.betweenness.socio   ##
